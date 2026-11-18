@@ -1,7 +1,6 @@
 import BPViewerCore
 import Foundation
 
-@main
 struct BPViewerFoundationRunner {
     static func main() throws {
         var runner = Runner()
@@ -9,9 +8,9 @@ struct BPViewerFoundationRunner {
     }
 }
 
-private struct Runner {
-    private var passed = 0
-    private var failed = 0
+struct Runner {
+    var passed = 0
+    var failed = 0
 
     mutating func run() throws {
         let fixture = FileManager.default.temporaryDirectory
@@ -27,7 +26,7 @@ private struct Runner {
         runPathCopyContracts(root: fixture)
         runCSVContracts()
         runMarkdownEditingContracts()
-        runMarkdownInlineEditContracts()
+        runMarkdownInlineEditContracts(); runTerminalReplyContracts(); runDocumentZoomContracts()
 
         print("Foundation contracts: " + String(passed) + " passed, " + String(failed) + " failed")
         if failed > 0 {
@@ -887,7 +886,7 @@ private struct Runner {
         expect(splitSession.isPreviewInline == false, "split source edit session is not Quick Edit")
     }
 
-    private mutating func expect(_ condition: @autoclosure () -> Bool, _ name: String) {
+    mutating func expect(_ condition: @autoclosure () -> Bool, _ name: String) {
         if condition() {
             passed += 1
             print("PASS " + name)
@@ -897,3 +896,4 @@ private struct Runner {
         }
     }
 }
+try BPViewerFoundationRunner.main()

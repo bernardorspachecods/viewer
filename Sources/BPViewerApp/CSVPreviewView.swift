@@ -122,7 +122,7 @@ private struct CSVHTMLPreview: NSViewRepresentable {
         let webView = FindTrackingWKWebView(frame: .zero, configuration: configuration)
         configuration.userContentController.add(context.coordinator, name: "csvEdit")
         webView.onFindFocus = onFindFocus
-        webView.setValue(false, forKey: "drawsBackground")
+        webView.disableDrawsBackground()
         webView.underPageBackgroundColor = .clear
         webView.navigationDelegate = context.coordinator
         webView.pageZoom = zoom

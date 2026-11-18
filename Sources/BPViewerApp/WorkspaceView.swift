@@ -171,7 +171,7 @@ struct DocumentWorkspaceView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if !model.isReaderWindow {
+            if !model.presentation.isReader {
                 TabBarView()
                 Divider()
             }

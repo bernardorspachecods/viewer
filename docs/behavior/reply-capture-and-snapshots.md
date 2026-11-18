@@ -23,6 +23,8 @@ tags: [behavior, capture, snapshots, reader-window]
 - Captured replies open at the default Markdown zoom.
 - Sending keystrokes requires macOS Accessibility permission. After granting it,
   you may need to quit and reopen Viewer for it to take effect.
+- How the capture engine is built, and what it needs from the app, is in
+  [terminal-reader.md](/docs/technical/terminal-reader.md).
 - Closing the last window leaves Viewer running, so the global shortcut stays
   available. Quitting Viewer ends the shortcut until the app is launched again.
 
@@ -37,6 +39,8 @@ tags: [behavior, capture, snapshots, reader-window]
   preview.
 - `⌘W` closes the reader window rather than its tab while the window holds a single
   tab.
+- Reader windows always open at the default size. They do not remember their size
+  or position; see [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
 
 ## Snapshots
 

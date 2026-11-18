@@ -20,7 +20,7 @@ struct RootView: View {
         .background(BPTokens.Color.canvas)
         .background(WindowCloseGuard(model: model))
         .preferredColorScheme(model.theme.colorScheme)
-        .frame(minWidth: 900, minHeight: 600)
+        .frame(minWidth: WorkspaceWindowMetrics.minimumWidth, minHeight: WorkspaceWindowMetrics.minimumHeight)
         .onDrop(of: [UTType.fileURL.identifier], isTargeted: nil) { providers in
             for provider in providers {
                 let _ = provider.loadObject(ofClass: URL.self) { url, _ in
@@ -371,7 +371,7 @@ struct WorkspaceHeaderBar: View {
 
     @ViewBuilder
     private var leadingItems: some View {
-        if !model.isReaderWindow {
+        if !model.presentation.isReader {
             ToolbarIconButton(
                 systemName: "sidebar.left",
                 help: model.sidebarVisible ? "Hide Sidebar" : "Show Sidebar"
@@ -387,7 +387,7 @@ struct WorkspaceHeaderBar: View {
         }
 
         if let tab = model.activeTab {
-            if !model.isReaderWindow {
+            if !model.presentation.isReader {
                 Rectangle()
                     .fill(BPTokens.Color.separator)
                     .frame(width: 1, height: BPTokens.Spacing.md)

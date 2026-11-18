@@ -11,7 +11,7 @@ tags: [architecture, security]
   Edit and in-preview navigation. It is disabled in the Word preview web view. A
   change that adds script to either one needs a security review.
 - **Open question:** the earlier architecture note said Markdown HTML does not enable
-  content scripts, which contradicts the code (`MarkdownWebPreview.swift`). Confirm that
+  content scripts, which contradicts the code (`MarkdownWebPreview.swift`, `MarkdownEditingJavaScript.swift`). Confirm that
   content JavaScript in the Markdown preview is intended.
 - The app does not write build artifacts into the user's source folder. LaTeX
   compiles in a temporary workspace.

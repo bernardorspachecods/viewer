@@ -17,6 +17,7 @@ description: "Current Viewer documentation: user-visible app behavior (one docum
 | Change CSV behavior | [CSV](/docs/behavior/csv.md) |
 | Change image or Word preview behavior | [Images and Word](/docs/behavior/images-and-word.md) |
 | Change reply capture, reader windows, or snapshots | [Reply capture and snapshots](/docs/behavior/reply-capture-and-snapshots.md) |
+| Change how the terminal reader engine is built or what it needs from the app | [Terminal reader engine](/docs/technical/terminal-reader.md) |
 | Change settings or what persists | [Settings and persistence](/docs/behavior/settings-and-persistence.md) |
 | Change module boundaries or coordination | [Technical architecture](/docs/technical/architecture.md) |
 | Change window composition or UI state | [UI architecture](/docs/technical/ui-architecture.md) |
@@ -51,6 +52,7 @@ Before writing or revising a document here, follow [documentacao.md](/repo-libra
 | How app state is stored: the versioned Codable model in Core, the single UserDefaults access point, the keys that must not be renamed, and what is kept out of stored state. | [persistence.md](/docs/technical/persistence.md) |
 | How documents become previews: the Markdown adapter and its image embedding, LaTeX compilation in temporary workspaces with its cache rules, image validation, render generations, and the known limits of compilation and SyncTeX. | [rendering.md](/docs/technical/rendering.md) |
 | Security boundaries of the app: the Markdown web view's Content Security Policy and script settings, the rule that build output stays out of the user's folder, LaTeX path filtering, authorization of outside files, and the shell escape default. | [security.md](/docs/technical/security.md) |
+| Technical boundary of the terminal reader engine that captures a Codex or Claude Code reply from a terminal and saves it as Markdown: what lives in the engine, what it needs from the app, its permissions, and its known gaps. | [terminal-reader.md](/docs/technical/terminal-reader.md) |
 | UI architecture of the macOS app: window composition, which layer presents overlays and snapshots, how the sidebar is rendered, and how the document surfaces are coupled to the models. | [ui-architecture.md](/docs/technical/ui-architecture.md) |
 | How the Viewer code is verified today: the two executable runners that exercise Core, the single app test file, and the areas with no automated coverage that must be treated as known gaps. | [verification.md](/docs/technical/verification.md) |
 <!-- BKF:GENERATED-MEMBER-INVENTORY:END -->

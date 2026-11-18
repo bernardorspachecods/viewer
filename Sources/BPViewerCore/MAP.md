@@ -20,6 +20,6 @@ description: "UI-independent Viewer logic: filesystem scanning, session and tab 
 - [LatexAdapter.swift](/Sources/BPViewerCore/LatexAdapter.swift) runs LaTeX preview compilation.
 - [JSONAdapter.swift](/Sources/BPViewerCore/JSONAdapter.swift) validates and formats JSON previews.
 - [CSVAdapter.swift](/Sources/BPViewerCore/CSVAdapter.swift) parses CSV and generates preview HTML.
-- [DocumentDiff.swift](/Sources/BPViewerCore/DocumentDiff.swift) provides diff modes, baselines, providers, and comparison logic.
+- [DocumentDiff.swift](/Sources/BPViewerCore/DocumentDiff.swift) provides diff modes, baselines, providers, and comparison logic; the Git HEAD baseline and restore are in `GitHeadDocumentDiff.swift`.
 
 Keep public contracts aligned with [current app behavior](/docs/MAP.md). Runners exercise this module before relying on UI behavior.

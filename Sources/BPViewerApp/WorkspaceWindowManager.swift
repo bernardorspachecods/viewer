@@ -2,6 +2,20 @@ import AppKit
 import BPViewerCore
 import SwiftUI
 
+/// Sizes and frame name of workspace windows. Defined once: the window
+/// factory, the SwiftUI root minimum, and the launch scene read these values.
+enum WorkspaceWindowMetrics {
+    /// Size of a workspace window before any frame has been saved.
+    static let defaultWidth: CGFloat = 1200
+    static let defaultHeight: CGFloat = 780
+    /// Smallest size SwiftUI lets a window shrink to, for every presentation.
+    static let minimumWidth: CGFloat = 900
+    static let minimumHeight: CGFloat = 600
+    /// Name AppKit saves the frame of workspace windows under. Standalone
+    /// windows (reader and capture) never use it.
+    static let frameAutosaveName = "com.bernardopacheco.bp-viewer.workspace-frame"
+}
+
 /// Owns the native macOS windows that represent open workspaces.
 ///
 /// Each window keeps its own AppModel alive, so selecting a native window tab
@@ -11,18 +25,17 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
     static let shared = WorkspaceWindowManager()
 
     static let tabbingIdentifier = "com.bernardopacheco.bp-viewer.workspace"
-    private static let captureWindowIdentifier = NSUserInterfaceItemIdentifier(
-        "com.bernardopacheco.bp-viewer.codex-capture"
-    )
 
     let session: WorkspaceSessionCoordinator
     var openMainWindow: (() -> Void)?
     @Published private(set) var activeModel: AppModel?
 
-    private var models: [ObjectIdentifier: AppModel] = [:]
-    private var windows: [ObjectIdentifier: NSWindow] = [:]
-    private var lastKnownModel: AppModel?
-    private var lastKnownWindow: NSWindow?
+    // Internal, not private: the terminal reader's window host extends this
+    // type in TerminalReader/, and it reads the same window state.
+    var models: [ObjectIdentifier: AppModel] = [:]
+    var windows: [ObjectIdentifier: NSWindow] = [:]
+    var lastKnownModel: AppModel?
+    var lastKnownWindow: NSWindow?
     private var didRestoreWorkspaces = false
     private var keyWindowObserver: NSObjectProtocol?
     private var isTerminating = false
@@ -63,11 +76,12 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         lastKnownModel = model
         lastKnownWindow = window
 
-        if window.identifier == Self.captureWindowIdentifier {
+        if model.presentation.isStandalone {
             window.tabbingMode = .disallowed
         } else {
             window.tabbingMode = .preferred
             window.tabbingIdentifier = Self.tabbingIdentifier
+            restoreWorkspaceFrame(window)
         }
         updateWindowTitle(window, for: model)
         model.attach(to: window)
@@ -84,9 +98,7 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
 
         // The first ordinary workspace window restores the session, falling back
         // to the default folders. It may start without a root.
-        guard !didRestoreWorkspaces,
-              !model.isReaderWindow,
-              window.identifier != Self.captureWindowIdentifier else { return }
+        guard !didRestoreWorkspaces, model.presentation == .workspace else { return }
         didRestoreWorkspaces = true
         DispatchQueue.main.async { [weak self, weak model] in
             guard let self, let model else { return }
@@ -193,7 +205,7 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         // With no document tab left there is nothing to close inside the window,
         // so Cmd-W closes the window. A reader window holds a single reply, so its
         // last tab closes the window too. performClose runs the unsaved-changes guard.
-        if model.tabs.isEmpty || (model.isReaderWindow && model.tabs.count <= 1) {
+        if model.tabs.isEmpty || (model.presentation.isReader && model.tabs.count <= 1) {
             keyWindow.performClose(nil)
             return
         }
@@ -204,68 +216,19 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         keyWindowModel() ?? activeModel ?? fallback
     }
 
-    /// Uses the last focused Viewer window, unless it is minimized or the caller
-    /// asks for an independent window. In both cases, a standalone capture
-    /// window keeps the existing workspace window intact.
-    func presentForCapturedReply(inIndependentWindow: Bool = false) -> AppModel? {
-        // The shortcut arrives while Terminal is frontmost. `activeModel` is
-        // the Viewer window that was focused before the app switch; AppKit's
-        // keyWindow may still point at another transient or stale window.
-        let model = activeModel ?? lastKnownModel
-        guard let model else { return nil }
-
-        let existingWindow = window(for: model)
-            ?? (lastKnownModel === model ? lastKnownWindow : nil)
-
-        if inIndependentWindow || existingWindow?.isMiniaturized == true {
-            let captureModel = AppModel(
-                workspaceSession: session,
-                restoresLastWorkspace: false,
-                persistsSharedConfiguration: false
-            )
-            captureModel.sidebarVisible = false
-            captureModel.isReaderWindow = inIndependentWindow
-            let captureWindow = makeWindow(for: captureModel, isCaptureWindow: true)
-            register(model: captureModel, window: captureWindow)
-            bringForward(captureWindow, model: captureModel)
-            return captureModel
-        }
-
-        if let existingWindow {
-            if windows[ObjectIdentifier(existingWindow)] == nil {
-                register(model: model, window: existingWindow)
-            }
-            bringForward(existingWindow, model: model)
-            return model
-        }
-
-        let restoredWindow = makeWindow(for: model)
-        register(model: model, window: restoredWindow)
-        bringForward(restoredWindow, model: model)
-        return model
-    }
-
     /// Opens each file in its own reader window (no sidebar or top bar), or
     /// focuses the reader window that already shows it.
     func openReaderWindows(for urls: [URL]) {
         for url in urls {
             let file = url.resolvingSymlinksInPath().standardizedFileURL
             if let existing = models.first(where: { _, model in
-                model.isReaderWindow && model.tabs.contains { $0.url.standardizedFileURL == file }
+                model.presentation.isReader && model.tabs.contains { $0.url.standardizedFileURL == file }
             }), let window = windows[existing.key] {
                 bringForward(window, model: existing.value)
                 continue
             }
 
-            let readerModel = AppModel(
-                workspaceSession: session,
-                restoresLastWorkspace: false,
-                persistsSharedConfiguration: false
-            )
-            readerModel.sidebarVisible = false
-            readerModel.isReaderWindow = true
-            let readerWindow = makeWindow(for: readerModel, isCaptureWindow: true)
-            register(model: readerModel, window: readerWindow)
+            let (readerModel, readerWindow) = makeStandaloneWindow(.reader)
             _ = readerModel.openDocument(url: file)
             // The hosting view resets the title after its first layout, so set it
             // again on the next run loop turn.
@@ -281,12 +244,12 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
     /// Opens the main workspace window when the app started without one, as
     /// happens when it is launched by opening a file. Reader windows stay in front.
     func ensureWorkspaceWindow() {
-        guard !windows.values.contains(where: { $0.identifier != Self.captureWindowIdentifier }) else { return }
+        guard !models.values.contains(where: { $0.presentation == .workspace }) else { return }
         openMainWindow?()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             guard let self else { return }
-            for window in windows.values where window.identifier == Self.captureWindowIdentifier {
-                window.orderFrontRegardless()
+            for (id, model) in models where model.presentation.isStandalone {
+                windows[id]?.orderFrontRegardless()
             }
         }
     }
@@ -295,6 +258,21 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         for model in models.values where model !== source {
             model.applySharedPreferences(from: source)
         }
+    }
+
+    /// Creates a standalone window (reader or capture) with its own model. The
+    /// caller adds content, then brings the window forward.
+    func makeStandaloneWindow(_ presentation: WindowPresentation) -> (model: AppModel, window: NSWindow) {
+        let model = AppModel(
+            workspaceSession: session,
+            restoresLastWorkspace: false,
+            persistsSharedConfiguration: false
+        )
+        model.sidebarVisible = false
+        model.presentation = presentation
+        let window = makeWindow(for: model)
+        register(model: model, window: window)
+        return (model, window)
     }
 
     private func restoreWorkspaces(anchoredAt initialModel: AppModel) {
@@ -352,26 +330,46 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         persistWorkspaceLayout()
     }
 
-    private func makeWindow(for model: AppModel, isCaptureWindow: Bool = false) -> NSWindow {
+    /// Creates the window for a model. Standalone windows open centered at the
+    /// default size. Workspace windows get their frame from `register`, which
+    /// restores the saved one.
+    func makeWindow(for model: AppModel) -> NSWindow {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1200, height: 780),
+            contentRect: NSRect(
+                x: 0,
+                y: 0,
+                width: WorkspaceWindowMetrics.defaultWidth,
+                height: WorkspaceWindowMetrics.defaultHeight
+            ),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
         window.isReleasedWhenClosed = false
-        if isCaptureWindow {
-            window.identifier = Self.captureWindowIdentifier
-            window.tabbingMode = .disallowed
-        }
         window.contentView = NSHostingView(
             rootView: RootView().environmentObject(model)
         )
-        window.center()
+        if model.presentation.isStandalone {
+            window.center()
+        }
         return window
     }
 
-    private func bringForward(_ window: NSWindow, model: AppModel) {
+    /// Restores the saved workspace frame, or centers the window when none is
+    /// saved, then keeps saving its frame. Native tabs share one autosave name,
+    /// so each workspace window reads and writes the same frame. The check on
+    /// the name makes this a no-op for a window already set up, such as one
+    /// re-registered by a later call.
+    private func restoreWorkspaceFrame(_ window: NSWindow) {
+        let name = WorkspaceWindowMetrics.frameAutosaveName
+        guard window.frameAutosaveName != name else { return }
+        if !window.setFrameUsingName(name) {
+            window.center()
+        }
+        _ = window.setFrameAutosaveName(name)
+    }
+
+    func bringForward(_ window: NSWindow, model: AppModel) {
         NSApp.activate(ignoringOtherApps: true)
         if window.isMiniaturized {
             window.deminiaturize(nil)
@@ -380,7 +378,7 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         activeModel = model
     }
 
-    private func window(for rootURL: URL) -> NSWindow? {
+    func window(for rootURL: URL) -> NSWindow? {
         let path = session.workspaceKey(for: rootURL)
         return windows.values.first { window in
             guard let model = models[ObjectIdentifier(window)], let modelRoot = model.rootURL else {
@@ -390,7 +388,7 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         }
     }
 
-    private func window(for model: AppModel) -> NSWindow? {
+    func window(for model: AppModel) -> NSWindow? {
         guard let windowID = models.first(where: { $0.value === model })?.key else {
             return nil
         }

@@ -1,4 +1,5 @@
 import AppKit
+import BPViewerCore
 import SwiftUI
 
 struct ImagePreviewView: View {
@@ -27,10 +28,10 @@ struct ImagePreviewView: View {
                     .gesture(
                         MagnificationGesture()
                             .onChanged { value in
-                                magnifiedZoom = clampedZoom(zoom * Double(value))
+                                magnifiedZoom = DocumentZoomLimits.clamped(zoom * Double(value))
                             }
                             .onEnded { value in
-                                onZoomChanged(clampedZoom(zoom * Double(value)))
+                                onZoomChanged(DocumentZoomLimits.clamped(zoom * Double(value)))
                                 magnifiedZoom = nil
                             }
                     )
@@ -74,7 +75,7 @@ struct ImagePreviewView: View {
                 availableHeight / max(imageSize.height, 1),
                 1
             )
-            let scale = fitScale * clampedZoom(magnifiedZoom ?? zoom)
+            let scale = fitScale * DocumentZoomLimits.clamped(magnifiedZoom ?? zoom)
             let renderedSize = CGSize(
                 width: max(imageSize.width * scale, 1),
                 height: max(imageSize.height * scale, 1)
@@ -108,9 +109,6 @@ struct ImagePreviewView: View {
         }
     }
 
-    private func clampedZoom(_ value: Double) -> Double {
-        min(max(value, 0.7), 2.0)
-    }
 
     private func loadImage() {
         image = NSImage(data: data)

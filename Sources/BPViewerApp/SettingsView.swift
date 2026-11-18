@@ -292,7 +292,7 @@ private struct ZoomValueControl: View {
     private var percentageValue: Binding<Double> {
         Binding(
             get: { value * 100 },
-            set: { value = min(max($0 / 100, 0.7), 2.0) }
+            set: { value = DocumentZoomLimits.clamped($0 / 100) }
         )
     }
 
@@ -351,6 +351,6 @@ private struct ZoomValueControl: View {
     }
 
     private func adjust(by amount: Double) {
-        value = min(max(value + amount, 0.7), 2.0)
+        value = DocumentZoomLimits.clamped(value + amount)
     }
 }

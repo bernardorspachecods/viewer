@@ -21,6 +21,10 @@ struct BPViewerApp: App {
             RootView()
                 .environmentObject(model)
         }
+        .defaultSize(
+            width: WorkspaceWindowMetrics.defaultWidth,
+            height: WorkspaceWindowMetrics.defaultHeight
+        )
         .restorationBehavior(.disabled)
         .commands {
             MainWindowCommands()
@@ -130,7 +134,7 @@ struct MainWindowCommands: Commands {
 @MainActor
 final class BPViewerAppDelegate: NSObject, NSApplicationDelegate {
     private var localKeyMonitor: Any?
-    private var codexReplyCapture: CodexReplyCaptureController?
+    private var replyCapture: TerminalReplyController?
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         WorkspaceWindowManager.shared.prepareForTermination()
@@ -166,8 +170,8 @@ final class BPViewerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let captureController = CodexReplyCaptureController()
-        codexReplyCapture = captureController
+        let captureController = TerminalReplyController(windows: WorkspaceWindowManager.shared)
+        replyCapture = captureController
         captureController.registerGlobalShortcut()
 
         localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -195,7 +199,7 @@ final class BPViewerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        codexReplyCapture?.unregisterGlobalShortcut()
+        replyCapture?.unregisterGlobalShortcut()
         if let localKeyMonitor {
             NSEvent.removeMonitor(localKeyMonitor)
         }

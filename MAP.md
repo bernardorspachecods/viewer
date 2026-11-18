@@ -44,7 +44,7 @@ Structural rules for code and documents are in [AGENTS.md](/AGENTS.md). How to d
 - [BPViewer-Info.plist](/Resources/BPViewer-Info.plist) supplies macOS app bundle metadata.
 - [BPViewer.icns](/Resources/BPViewer.icns) is the app icon.
 - [BPViewer-logo.svg](/Resources/BPViewer-logo.svg) is the vector app logo.
-- [MarkdownAdapterTests.swift](/Tests/BPViewerAppTests/MarkdownAdapterTests.swift) contains package tests for the Markdown adapter.
+- [MarkdownAdapterTests.swift](/Tests/BPViewerAppTests/MarkdownAdapterTests.swift) contains package tests for the Markdown adapter and preview; the other app tests sit beside it in `Tests/BPViewerAppTests/`, one file per topic.
 
 `.build/`, `.swiftpm/`, and `DerivedData/` hold generated build or package state, not durable context.
 

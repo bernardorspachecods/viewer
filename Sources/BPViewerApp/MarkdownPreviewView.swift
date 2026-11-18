@@ -69,7 +69,7 @@ struct MarkdownPreviewView: View {
         VStack(spacing: 0) {
             // Reader windows keep the toolbar only while editing, so changes
             // can still be saved or discarded.
-            if !model.isReaderWindow || editingSession != nil {
+            if !model.presentation.isReader || editingSession != nil {
                 DocumentInteractionToolbar(
                     isOutlineAvailable: !outlineItems.isEmpty,
                     isOutlineVisible: isOutlineVisible,

@@ -10,6 +10,9 @@ tags: [behavior, workspaces, tabs]
 
 - A workspace is one local folder, shown as a native macOS window tab with its
   own header, sidebar, file tree, and document tab bar.
+- A workspace window reopens at the size and position it had when it was last
+  moved or resized, and 1200 × 780 before any is saved. Reader and capture windows
+  always open at the default size.
 - The folder button, the native `+`, and `⇧⌘T` open a folder through the folder
   picker in a new workspace tab. A folder that is already open is focused, not
   opened a second time.

@@ -15,3 +15,4 @@ description: "The macOS SwiftUI and AppKit layer of Viewer: window composition, 
 
 - [AppModel.swift](/Sources/BPViewerApp/AppModel.swift) coordinates UI intents, observable state, and session events.
 - [SourceEditorView.swift](/Sources/BPViewerApp/SourceEditorView.swift) provides the source editor, line gutter, and diff decorations.
+- [TerminalReplyController.swift](/Sources/BPViewerApp/TerminalReader/TerminalReplyController.swift) runs the terminal reply capture engine in the `TerminalReader` folder; its boundary with the app is in `docs/technical/terminal-reader.md`.

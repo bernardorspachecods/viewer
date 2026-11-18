@@ -13,7 +13,9 @@ tags: [verification, gaps]
 - `swift run BPViewerFoundationRunner` covers the filesystem, tree, tabs, persistence,
   editing, and merge foundations.
 - The runners' roles, and why they exist, are in [Sources/MAP.md](/Sources/MAP.md).
-- The only app test file is `Tests/BPViewerAppTests/MarkdownAdapterTests.swift`.
+- The app test files are in `Tests/BPViewerAppTests/`, one per topic (Markdown preview,
+  workspace files and tree, tabs, images, CSV, LaTeX, editing modes, diff, editor layout);
+  shared test doubles are in `TestDoubles.swift`.
 - The standard `swift test` target has not been verified on the current toolchain.
   The runners are the verification path.
 

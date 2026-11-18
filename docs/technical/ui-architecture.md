@@ -27,7 +27,8 @@ that produces it. Module boundaries and coordination are in
 ## State
 
 - `WorkspaceWindowManager` creates the windows as native tabs, restores their order,
-  and routes global commands to the active window.
+  and routes global commands to the active window. Each model's window presentation
+  (`WindowPresentation`: workspace, standalone, or reader) is set once, at creation.
 - `AppModel` is the observable object for one workspace. It publishes the state the
   surfaces render; the published properties are in `Sources/BPViewerApp/AppModel.swift`.
 - Render, edit, and diff requests go to their coordinators. The results come back as
@@ -55,4 +56,5 @@ that produces it. Module boundaries and coordination are in
 - PDF: local links go to the app's router; external links go to the browser.
 - Images and Word: image reads go through the render coordinator (see
   [rendering.md](/docs/technical/rendering.md)).
-- Reply capture runs in its own controller in the App target.
+- Terminal reply capture is a separate engine in `Sources/BPViewerApp/TerminalReader/`;
+  see [terminal-reader.md](/docs/technical/terminal-reader.md).

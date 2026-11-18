@@ -1,9 +1,6 @@
 {
-  "Sources/BPViewerApp/DocumentRenderCoordinator.swift::render#2": 219,
   "Sources/BPViewerApp/WorkspaceView.swift::body#6": 380,
-  "Sources/BPViewerContractRunner/main.swift::main": 491,
-  "Sources/BPViewerCore/LatexAdapter.swift::render": 228,
-  "Sources/BPViewerCore/MarkdownAdapter.swift::rendered": 152,
+  "Sources/BPViewerCore/MarkdownHTMLDocument.swift::rendered": 152,
   "Sources/BPViewerFoundationRunner/main.swift::runMarkdownEditingContracts": 212,
   "Sources/BPViewerFoundationRunner/main.swift::runScannerContracts": 235
 }

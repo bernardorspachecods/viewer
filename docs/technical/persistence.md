@@ -11,7 +11,7 @@ What users see survive a restart is in
 document covers how it is stored.
 
 - Persisted state is a `Codable` model with a `schemaVersion`, in
-  `Sources/BPViewerCore/SessionModels.swift`. Changes to it must keep older state
+  `Sources/BPViewerCore/SessionStateModels.swift`. Changes to it must keep older state
   loading.
 - Storage is JSON in `UserDefaults`. Only `WorkspaceSessionCoordinator` reads and
   writes it.
@@ -20,6 +20,9 @@ document covers how it is stored.
 - The workspace order and the active workspace are stored to restore the window
   tabs at launch. The launch fallback is in
   [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
+- Workspace window frames are saved by AppKit under the frame autosave name in
+  `WorkspaceWindowMetrics`, not by `WorkspaceSessionCoordinator`. Reader and capture
+  windows never use that name.
 - Transient state is not stored: diff state exists only in memory, and rendered HTML,
   PDFs, logs, and raw content are not session state.
 - Snapshot PNG files are stored in Application Support, outside the repository.

@@ -41,9 +41,8 @@ final class AppModel: ObservableObject {
     @Published var treeRevealTargetID: String?
     @Published var treeScrollOffset: Double = 0
     @Published var sidebarVisible = true
-    /// Standalone reply window: shows only the document body, without the top
-    /// bar, tab bar, or document header.
-    @Published var isReaderWindow = false
+    /// How this model's window presents it. Set once, when the window is created.
+    @Published var presentation: WindowPresentation = .workspace
     @Published var sidebarWidth: Double = 280
     /// Default workspace folders, mirrored from the shared session so Settings
     /// reads the same list from any window.
