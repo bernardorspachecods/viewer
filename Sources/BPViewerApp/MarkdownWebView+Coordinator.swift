@@ -21,7 +21,12 @@ extension MarkdownWebView {
         var findBackwards = false
         var isFindTarget = true
         var outlineRequestID = 0
-        var pendingHeadingID: String?
+        /// Anchors to scroll to once the document has loaded, tried in order.
+        var pendingAnchors: [String] = []
+        /// Request that produced `pendingAnchors`, reported back once applied.
+        var pendingAnchorRequestID: UUID?
+        var lastAnchorRequestID: UUID?
+        var onAnchorRequestApplied: (UUID) -> Void = { _ in }
         var isDocumentLoaded = false
         var canBeginEditing = true
         var isQuickEditEnabled = false
@@ -155,7 +160,7 @@ extension MarkdownWebView {
                 restoreReadingPosition(pendingReadingPosition, in: webView)
                 self.pendingReadingPosition = nil
             }
-            scrollToPendingHeading(in: webView)
+            scrollToPendingAnchors(in: webView)
             find(in: webView, updateMatchCount: true)
             scheduleCapture(of: webView)
             applyQuickEditState(in: webView)
@@ -240,15 +245,46 @@ extension MarkdownWebView {
             webView.evaluateJavaScript(script, completionHandler: nil)
         }
 
-        func scrollToPendingHeading(in webView: WKWebView) {
-            guard isDocumentLoaded, let pendingHeadingID,
-                  let encodedID = try? String(data: JSONEncoder().encode(pendingHeadingID), encoding: .utf8) else {
+        func scrollToPendingAnchors(in webView: WKWebView) {
+            guard isDocumentLoaded, !pendingAnchors.isEmpty else { return }
+            scrollToAnchors(pendingAnchors, in: webView)
+            pendingAnchors = []
+            if let requestID = pendingAnchorRequestID {
+                pendingAnchorRequestID = nil
+                // Reported asynchronously: this can run during a SwiftUI update.
+                Task { @MainActor [weak self] in self?.onAnchorRequestApplied(requestID) }
+            }
+        }
+
+        /// Scrolls to the first anchor that exists in the document.
+        func scrollToAnchors(_ anchors: [String], in webView: WKWebView) {
+            guard !anchors.isEmpty,
+                  let encoded = try? String(data: JSONEncoder().encode(anchors), encoding: .utf8) else {
                 return
             }
-
-            let script = "document.getElementById(\(encodedID))?.scrollIntoView({ block: 'start', behavior: 'smooth' });"
+            let script = """
+            (() => {
+                for (const id of \(encoded)) {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                        return true;
+                    }
+                }
+                return false;
+            })();
+            """
             webView.evaluateJavaScript(script, completionHandler: nil)
-            self.pendingHeadingID = nil
+        }
+
+        /// Anchors when the navigation stays in this document (a fragment on the same file).
+        private func sameDocumentAnchors(for url: URL, in webView: WKWebView) -> [String]? {
+            for directory in [baseURL, webView.url].compactMap({ $0 }) {
+                if let anchors = MarkdownLinkResolver.sameDocumentAnchors(for: url, documentDirectory: directory) {
+                    return anchors
+                }
+            }
+            return nil
         }
 
         func find(in webView: WKWebView, updateMatchCount: Bool) {
@@ -280,6 +316,13 @@ extension MarkdownWebView {
                 resolvedURL = relativeURL
             } else {
                 resolvedURL = requestedURL
+            }
+
+            // Same-document fragments scroll in place; they must not reopen the file.
+            if let anchors = sameDocumentAnchors(for: resolvedURL, in: webView) {
+                scrollToAnchors(anchors, in: webView)
+                decisionHandler(.cancel)
+                return
             }
 
             let isLocalFileNavigation = resolvedURL.isFileURL

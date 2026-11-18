@@ -134,6 +134,23 @@ struct CopyTextButton: View {
     }
 }
 
+/// The label variant sits in a tinted capsule; the icon-only variant is the bare symbol.
+private struct StatusBadgeChrome: ViewModifier {
+    let showsLabel: Bool
+    let color: Color
+
+    func body(content: Content) -> some View {
+        if showsLabel {
+            content
+                .padding(.horizontal, BPTokens.Spacing.xs)
+                .padding(.vertical, BPTokens.Spacing.xxs)
+                .background(color.opacity(0.12), in: Capsule())
+        } else {
+            content
+        }
+    }
+}
+
 struct StatusBadge: View {
     let status: PreviewStatus
     var showsLabel = true
@@ -149,9 +166,7 @@ struct StatusBadge: View {
         }
         .font(BPTokens.Typography.caption)
         .foregroundStyle(status.color)
-        .padding(.horizontal, showsLabel ? BPTokens.Spacing.xs : BPTokens.Spacing.xxs)
-        .padding(.vertical, BPTokens.Spacing.xxs)
-        .background(status.color.opacity(0.12), in: Capsule())
+        .modifier(StatusBadgeChrome(showsLabel: showsLabel, color: status.color))
         .help(status.label)
     }
 }

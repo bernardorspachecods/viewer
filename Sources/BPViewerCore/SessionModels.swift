@@ -177,6 +177,8 @@ public struct DocumentTab: Identifiable, Hashable, Sendable {
     public var latexCursorUTF8Offset: Int?
     public var jsonCursorUTF8Offset: Int?
     public var diffSession: DocumentDiffSession?
+    /// A fragment to scroll the Markdown preview to, set when a link opens this document.
+    public var previewAnchorRequest: MarkdownAnchorRequest?
 
     public init(
         id: String,

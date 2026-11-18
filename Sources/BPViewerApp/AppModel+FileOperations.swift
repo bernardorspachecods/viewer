@@ -69,6 +69,10 @@ extension AppModel {
         copyText(FilePathCopy.string(for: url))
     }
 
+    func revealInFinder(_ url: URL) {
+        finderRevealer.reveal(url.standardizedFileURL)
+    }
+
     func rename(_ node: FileNode) {
         guard let rootURL else { return }
 

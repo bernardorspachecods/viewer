@@ -42,7 +42,7 @@ extension AppModel {
 
     func openPreviewURL(_ url: URL) {
         if let localFileURL = MarkdownPreviewLink.fileURL(from: url) {
-            openPreviewURL(localFileURL)
+            openLocalPreview(localFileURL, fragment: MarkdownPreviewLink.fragment(from: url))
             return
         }
 
@@ -56,6 +56,10 @@ extension AppModel {
             return
         }
 
+        openLocalPreview(url, fragment: nil)
+    }
+
+    private func openLocalPreview(_ url: URL, fragment: String?) {
         let standardizedURL = url.resolvingSymlinksInPath().standardizedFileURL
         guard FileManager.default.fileExists(atPath: standardizedURL.path) else {
             return
@@ -70,8 +74,24 @@ extension AppModel {
         case let .external(externalURL):
             NSWorkspace.shared.open(externalURL)
         case .preview:
-            openDocument(url: standardizedURL)
+            let tabID = openDocument(url: standardizedURL)
+            requestPreviewAnchor(fragment, tabID: tabID)
         }
+    }
+
+    private func requestPreviewAnchor(_ fragment: String?, tabID: String?) {
+        let anchors = MarkdownAnchor.candidates(forFragment: fragment)
+        guard !anchors.isEmpty,
+              let tabID,
+              let index = tabs.firstIndex(where: { $0.id == tabID }) else { return }
+        tabs[index].previewAnchorRequest = MarkdownAnchorRequest(anchors: anchors)
+    }
+
+    /// Called once the preview has scrolled to a request, so it does not repeat when the view returns.
+    func clearPreviewAnchorRequest(_ requestID: UUID, forTabID tabID: String) {
+        guard let index = tabs.firstIndex(where: { $0.id == tabID }),
+              tabs[index].previewAnchorRequest?.id == requestID else { return }
+        tabs[index].previewAnchorRequest = nil
     }
 
     @discardableResult

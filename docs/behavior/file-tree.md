@@ -51,8 +51,11 @@ tags: [behavior, sidebar, file-tree]
 
 ## File operations
 
-- Folder context menu: copy path, rename, move to Trash.
-- File context menu: rename, duplicate, move to Trash.
+- Folder context menu: copy path, reveal in Finder, rename, move to Trash.
+- File context menu: copy path, reveal in Finder, reload, rename, duplicate, move
+  to Trash.
+- Reveal in Finder opens Finder with the item selected in its folder. It does not
+  change the sidebar.
 - Open tabs follow renames.
 - An item with unsaved changes cannot be moved to the Trash.
 

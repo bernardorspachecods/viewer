@@ -27,6 +27,22 @@ Shared editing rules (drafts, saving, conflicts, diffs) are in
   image refreshes the preview.
 - Links to Markdown and LaTeX files open or focus their tabs. Links to other local
   files open in the macOS default app. External links open in the browser.
+- Relative links (`./a.md`, `../b.md`) resolve from the document's folder. A
+  destination may be percent-encoded (`my%20notes.md`) or written in angle brackets
+  with spaces (`<my notes.md>`).
+- A link with a fragment scrolls to that heading. In the same document it scrolls
+  in place; into another Markdown or LaTeX file it opens the file and scrolls there.
+- Fragments match a heading id exactly first, then by its normalized form: lower
+  case, accents folded, every other run of characters becomes `-`. So `#seção` and
+  `#secao` both find "Seção", and `#1-introdução` finds "1. Introdução". Repeated
+  headings get `-2`, `-3`, and so on. An accent that is folded to a different
+  letter (`ç` to `c`) changes the key: "Secção" is `seccao`.
+- Raw HTML in the preview is not run. A line break (`<br>`, `<br/>`, `<br />`) and
+  the formatting tags `b`, `strong`, `i`, `em`, `u`, `sub`, `sup`, `kbd`, `mark`,
+  `code`, `s`, `del`, `small` render when written bare (no attributes). Any other
+  HTML is never emitted as markup; it shows the grey "HTML raw" placeholder, with
+  the source of a block shown as plain text.
+- A bare `<b>` with no closing tag stays bold to the end of its paragraph.
 - If an update fails, the preview keeps the last good result and shows the
   diagnostic.
 

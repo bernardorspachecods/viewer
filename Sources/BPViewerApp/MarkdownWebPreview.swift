@@ -28,6 +28,9 @@ struct MarkdownWebView: NSViewRepresentable {
     let onFindMatchCount: @MainActor @Sendable (Int) -> Void
     let requestedHeadingID: String?
     let outlineRequestID: Int
+    /// A fragment from a link into this document, scrolled to once it is rendered.
+    let anchorRequest: MarkdownAnchorRequest?
+    let onAnchorRequestApplied: (UUID) -> Void
     let readingPosition: MarkdownReadingPosition?
     let onReadingPositionChanged: (MarkdownReadingPosition) -> Void
     let isQuickEditEnabled: Bool
@@ -69,6 +72,7 @@ struct MarkdownWebView: NSViewRepresentable {
         context.coordinator.onMarkdownEditEvent = onMarkdownEditEvent
         context.coordinator.onReadingPositionChanged = onReadingPositionChanged
         context.coordinator.onQuickEditFocusApplied = onQuickEditFocusApplied
+        context.coordinator.onAnchorRequestApplied = onAnchorRequestApplied
         context.coordinator.canBeginEditing = canBeginEditing
         context.coordinator.onFindMatchCount = onFindMatchCount
         (webView as? FindTrackingWKWebView)?.onFindFocus = onFindFocus
@@ -121,9 +125,18 @@ struct MarkdownWebView: NSViewRepresentable {
 
         if context.coordinator.outlineRequestID != outlineRequestID {
             context.coordinator.outlineRequestID = outlineRequestID
-            context.coordinator.pendingHeadingID = requestedHeadingID
+            context.coordinator.pendingAnchors = requestedHeadingID.map { [$0] } ?? []
             if !documentChanged {
-                context.coordinator.scrollToPendingHeading(in: webView)
+                context.coordinator.scrollToPendingAnchors(in: webView)
+            }
+        }
+
+        if let anchorRequest, context.coordinator.lastAnchorRequestID != anchorRequest.id {
+            context.coordinator.lastAnchorRequestID = anchorRequest.id
+            context.coordinator.pendingAnchors = anchorRequest.anchors
+            context.coordinator.pendingAnchorRequestID = anchorRequest.id
+            if !documentChanged {
+                context.coordinator.scrollToPendingAnchors(in: webView)
             }
         }
 

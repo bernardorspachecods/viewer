@@ -8,6 +8,12 @@ tags: [architecture, rendering, latex, markdown]
 
 ## Markdown
 
+- Link destinations and heading anchors are resolved in Core by
+  `MarkdownLinkResolver` and `MarkdownAnchor`, which the renderer and the app share.
+  The web view only cancels same-document fragment navigation and scrolls in place;
+  cross-file fragments travel in the bridge URL and the tab's anchor request.
+- Raw HTML passes only through the allowlist in `MarkdownSafeInlineHTML`; everything
+  else becomes the placeholder.
 - `SwiftMarkdownAdapter` in Core uses swift-markdown to produce HTML. The adapter
   escapes text and attributes, controls URL schemes, collects dependencies, and
   builds the outline and the editable blocks.

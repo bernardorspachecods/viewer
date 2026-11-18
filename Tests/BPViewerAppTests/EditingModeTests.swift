@@ -75,7 +75,7 @@ func keepsTabAndWorktreeFileContextActionsAligned() {
     let fileActions = Set(WorkspaceContextMenuOptions.forFile(isDirectory: false))
 
     #expect(
-        tabActions.subtracting([.closeTab, .closeOtherTabs]) == fileActions
+        tabActions.subtracting([.closeTab, .closeOtherTabs, .revealInSidebar]) == fileActions
     )
     #expect(fileActions.contains(.revealInFinder))
 }

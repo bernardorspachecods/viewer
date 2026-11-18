@@ -180,12 +180,21 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
     }
 
     mutating func visitLink(_ link: Markdown.Link) {
-        guard let destination = safeURL(link.destination) else {
+        let rawDestination = link.destination ?? ""
+        let href: String
+        if let target = MarkdownLinkResolver.target(forDestination: rawDestination, baseURL: baseURL) {
+            guard let localHref = localLinkHref(for: target) else {
+                descendInto(link)
+                return
+            }
+            href = localHref
+        } else if let destination = safeURL(link.destination) {
+            href = destination
+        } else {
             descendInto(link)
             return
         }
-        let renderedDestination = localPreviewLinkDestination(for: destination) ?? destination
-        html += "<a href=\"\(escapeAttribute(renderedDestination))\" data-bp-markdown-href=\"\(escapeAttribute(destination))\""
+        html += "<a href=\"\(escapeAttribute(href))\" data-bp-markdown-href=\"\(escapeAttribute(rawDestination))\""
         if let title = link.title, !title.isEmpty {
             html += " title=\"\(escapeAttribute(title))\""
         }
@@ -194,16 +203,16 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
         html += "</a>"
     }
 
-    private func localPreviewLinkDestination(for source: String) -> String? {
-        guard !source.hasPrefix("#"),
-              let sourceURL = URL(string: source),
-              sourceURL.scheme == nil,
-              let resolvedURL = URL(string: source, relativeTo: baseURL)?.absoluteURL,
-              let previewURL = MarkdownPreviewLink.url(for: resolvedURL) else {
-            return nil
+    /// Same-file fragments become `#anchor` links the web view scrolls to; local files
+    /// become bridge URLs the app opens, carrying the fragment.
+    private func localLinkHref(for target: MarkdownLinkTarget) -> String? {
+        switch target {
+        case let .sameDocument(anchors):
+            let anchor = anchors.last ?? ""
+            return "#" + (anchor.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) ?? "")
+        case let .localFile(fileURL, fragment):
+            return MarkdownPreviewLink.url(for: fileURL, fragment: fragment)?.absoluteString
         }
-
-        return previewURL.absoluteString
     }
 
     mutating func visitLineBreak(_ lineBreak: LineBreak) {
@@ -219,8 +228,12 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
         html += renderTextWithMath(text.string, sourceOffset: offset)
     }
 
-    // Raw HTML is intentionally omitted until the sanitizer policy is expanded and tested.
+    // Raw HTML renders only through the allowlist in MarkdownSafeInlineHTML; other tags keep the placeholder.
     mutating func visitHTMLBlock(_ htmlBlock: HTMLBlock) {
+        if let safeHTML = MarkdownSafeInlineHTML.block(htmlBlock.rawHTML) {
+            html += "<p>\(safeHTML)</p>\n"
+            return
+        }
         guard let range = htmlBlock.range,
               let region = specialRegions.first(where: {
                   $0.kind == .html && $0.sourceRange.startOffset == sourceOffset(for: range.lowerBound)
@@ -228,6 +241,10 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
         html += "<pre class=\"bp-special-placeholder\"\(specialAttribute(for: region))>HTML raw\n\(escapeText(region.source))</pre>\n"
     }
     mutating func visitInlineHTML(_ inlineHTML: InlineHTML) {
+        if let safeHTML = MarkdownSafeInlineHTML.inline(inlineHTML.rawHTML) {
+            html += safeHTML
+            return
+        }
         let attribute = inlineHTML.range.flatMap { range in
             specialRegions.first(where: {
                 $0.kind == .html && $0.sourceRange.startOffset == sourceOffset(for: range.lowerBound)
@@ -290,8 +307,10 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
     }
 
     private func localResourceURL(for source: String) -> URL? {
-        guard URL(string: source)?.scheme == nil else { return nil }
-        return baseURL.appendingPathComponent(source).standardizedFileURL
+        guard case let .localFile(fileURL, _) = MarkdownLinkResolver.target(forDestination: source, baseURL: baseURL) else {
+            return nil
+        }
+        return fileURL
     }
 
     private func embeddedImageSource(for url: URL) -> String? {
@@ -389,13 +408,7 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
     }
 
     private mutating func uniqueHeadingID(for value: String) -> String {
-        let base = value
-            .folding(options: .diacriticInsensitive, locale: .current)
-            .lowercased()
-            .replacingOccurrences(of: "[^a-z0-9]+", with: "-", options: .regularExpression)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
-
-        let normalizedBase = base.isEmpty ? "section" : base
+        let normalizedBase = MarkdownAnchor.headingBase(for: value)
         let count = headingCounts[normalizedBase, default: 0]
         headingCounts[normalizedBase] = count + 1
         return count == 0 ? normalizedBase : "\(normalizedBase)-\(count + 1)"

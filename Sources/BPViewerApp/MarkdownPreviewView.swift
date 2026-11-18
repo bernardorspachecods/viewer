@@ -40,6 +40,8 @@ struct MarkdownPreviewView: View {
     let findTarget: FindTarget
     let onFindTargetChanged: (FindTarget) -> Void
     let onFindMatchCount: @MainActor @Sendable (Int) -> Void
+    let anchorRequest: MarkdownAnchorRequest?
+    let onAnchorRequestApplied: (UUID) -> Void
     @Binding var isOutlineVisible: Bool
     let outlineWidth: Double
     let onOutlineWidthChanged: (Double) -> Void
@@ -241,6 +243,8 @@ struct MarkdownPreviewView: View {
                 onFindMatchCount: onFindMatchCount,
                 requestedHeadingID: selectedHeadingID,
                 outlineRequestID: outlineRequestID,
+                anchorRequest: anchorRequest,
+                onAnchorRequestApplied: onAnchorRequestApplied,
                 readingPosition: readingPosition,
                 onReadingPositionChanged: onReadingPositionChanged,
                 isQuickEditEnabled: isQuickEditEnabled,

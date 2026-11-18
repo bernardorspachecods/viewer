@@ -44,6 +44,9 @@ tags: [behavior, workspaces, tabs]
   is the only workspace window. The unsaved-changes rules in
   [editing-and-diff.md](/docs/behavior/editing-and-diff.md) still apply. The app
   keeps running after its last window closes.
+- A tab's context menu has copy path, reveal in sidebar (selects the file in the
+  sidebar tree), reveal in Finder, reload, rename, duplicate, move to Trash, close
+  tab, and close other tabs. An untitled tab has only the two close actions.
 - The `+` button at the end of the tab bar creates an in-memory Markdown tab with
   no path. The first `Save` opens a panel to choose the `.md` file. Such a tab is
   not restored after a restart.

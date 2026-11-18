@@ -96,6 +96,10 @@ extension PreviewPane {
                 findTarget: model.findTarget,
                 onFindTargetChanged: model.setFindTarget,
                 onFindMatchCount: model.setFindMatchCount,
+                anchorRequest: tab.previewAnchorRequest,
+                onAnchorRequestApplied: { requestID in
+                    model.clearPreviewAnchorRequest(requestID, forTabID: tab.id)
+                },
                 isOutlineVisible: Binding(
                     get: { model.tabs.first(where: { $0.id == tab.id })?.isOutlineVisible ?? false },
                     set: { model.setOutlineVisible($0, forTabID: tab.id) }

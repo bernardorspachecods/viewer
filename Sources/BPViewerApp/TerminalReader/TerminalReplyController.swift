@@ -9,6 +9,9 @@ import Foundation
 final class TerminalReplyController {
     private let windows: any TerminalReplyHost
     private let shortcut = TerminalReplyShortcut()
+    /// Poll attempt (100 ms each) at which a blind Return confirms Claude Code's
+    /// copy picker when it was not detected.
+    private static let claudePickerFallbackAttempt = 6
     private var isCapturing = false
     private var didRequestAccessibilityPermission = false
     private var lastShortcutHandledAt: TimeInterval = 0
@@ -62,7 +65,7 @@ final class TerminalReplyController {
         let terminalProcessID = terminal.processIdentifier
         Task { @MainActor [weak self] in
             var didSelectClaudeCopyOption = false
-            for _ in 0..<30 {
+            for attempt in 0..<30 {
                 try? await Task.sleep(for: .milliseconds(100))
                 guard let self else { return }
                 guard NSWorkspace.shared.frontmostApplication?.processIdentifier == terminalProcessID else {
@@ -73,6 +76,14 @@ final class TerminalReplyController {
                 if client == .claudeCode,
                    !didSelectClaudeCopyOption,
                    TerminalReplyAccessibility.isClaudeCopyPickerVisible(in: terminalProcessID) {
+                    didSelectClaudeCopyOption = TerminalReplyKeystrokes.sendReturnKey()
+                } else if client == .claudeCode,
+                          !didSelectClaudeCopyOption,
+                          attempt == Self.claudePickerFallbackAttempt,
+                          NSPasteboard.general.changeCount == originalClipboardChangeCount {
+                    // The picker was not detected (wording or Accessibility text
+                    // changed) and nothing was copied: confirm "Full response"
+                    // blindly. Return on an empty Claude Code prompt does nothing.
                     didSelectClaudeCopyOption = TerminalReplyKeystrokes.sendReturnKey()
                 }
 

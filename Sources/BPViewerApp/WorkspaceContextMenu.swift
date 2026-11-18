@@ -3,6 +3,8 @@ import SwiftUI
 
 enum WorkspaceContextMenuOption: Hashable {
     case copyPath
+    /// Tabs only: selects the file in the workspace sidebar.
+    case revealInSidebar
     case revealInFinder
     case reload
     case rename
@@ -33,7 +35,9 @@ enum WorkspaceContextMenuOptions {
         guard !isUntitled else {
             return [.closeTab, .closeOtherTabs]
         }
-        return forFile(isDirectory: false) + [.closeTab, .closeOtherTabs]
+        // The sidebar's own menu already sits on the file, so only tabs offer reveal in sidebar.
+        let fileOptions = forFile(isDirectory: false)
+        return [.copyPath, .revealInSidebar] + fileOptions.dropFirst() + [.closeTab, .closeOtherTabs]
     }
 }
 
@@ -98,8 +102,16 @@ struct WorkspaceContextMenuModifier: ViewModifier {
             Label("Copy Path", systemImage: "doc.on.doc")
         }
 
+        if case .tab = target {
+            Button {
+                model.revealInSidebar(target.url)
+            } label: {
+                Label("Reveal in Sidebar", systemImage: "sidebar.left")
+            }
+        }
+
         Button {
-            model.revealInSidebar(target.url)
+            model.revealInFinder(target.url)
         } label: {
             Label("Reveal in Finder", systemImage: "folder")
         }

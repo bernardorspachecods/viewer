@@ -42,6 +42,8 @@ final class AppModel: ObservableObject {
     /// The workspace root's listing is hidden, mirrored from the tree session.
     @Published var isRootCollapsed = false
     @Published var treeRevealTargetID: String?
+    /// Shows items in Finder; replaced in tests to record the request.
+    var finderRevealer: FinderRevealing = SystemFinderRevealer()
     @Published var treeScrollOffset: Double = 0
     @Published var sidebarVisible = true
     /// How this model's window presents it. Set once, when the window is created.
