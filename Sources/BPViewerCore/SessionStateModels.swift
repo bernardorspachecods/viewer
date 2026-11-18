@@ -61,10 +61,13 @@ public struct GlobalState: Codable, Sendable {
     public var defaultWorkspaceFolders: [String] = []
     /// Raw values of the `DocumentKind`s shown by "Show selected files only".
     public var selectedFileKinds: [String] = DocumentKind.selectableKinds.map(\.rawValue)
+    /// Extra extensions shown by "Show selected files only", for files the app does not support.
+    public var extraFileExtensions: [String] = []
 
     private enum CodingKeys: String, CodingKey {
         case theme, sidebarVisible, sidebarWidth, latexShellEscapeMode
         case defaultMarkdownZoom, defaultLatexZoom, defaultWorkspaceFolders, selectedFileKinds
+        case extraFileExtensions
     }
 
     public init() {}
@@ -80,6 +83,7 @@ public struct GlobalState: Codable, Sendable {
         defaultWorkspaceFolders = try container.decodeIfPresent([String].self, forKey: .defaultWorkspaceFolders) ?? []
         selectedFileKinds = try container.decodeIfPresent([String].self, forKey: .selectedFileKinds)
             ?? DocumentKind.selectableKinds.map(\.rawValue)
+        extraFileExtensions = try container.decodeIfPresent([String].self, forKey: .extraFileExtensions) ?? []
     }
 }
 

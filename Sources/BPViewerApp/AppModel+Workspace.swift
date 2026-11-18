@@ -115,6 +115,25 @@ extension AppModel {
         WorkspaceWindowManager.shared.synchronizeGlobalPreferences(from: self)
     }
 
+    /// Returns false when the input is invalid, already supported, or already listed.
+    @discardableResult
+    func addExtraFileExtension(_ raw: String) -> Bool {
+        guard workspaceSession.addExtraFileExtension(raw) else { return false }
+        syncExtraFileExtensions()
+        return true
+    }
+
+    func removeExtraFileExtension(_ ext: String) {
+        workspaceSession.removeExtraFileExtension(ext)
+        syncExtraFileExtensions()
+    }
+
+    private func syncExtraFileExtensions() {
+        extraFileExtensions = workspaceSession.extraFileExtensions
+        workspaceTreeSession.setExtraFileExtensions(Set(extraFileExtensions))
+        WorkspaceWindowManager.shared.synchronizeGlobalPreferences(from: self)
+    }
+
     func updateShowHiddenFiles(_ value: Bool) {
         workspaceTreeSession.setShowHiddenFiles(value)
         persistState()

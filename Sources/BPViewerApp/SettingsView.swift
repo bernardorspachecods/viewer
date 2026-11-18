@@ -145,10 +145,12 @@ private struct AppearanceSettingsView: View {
 
 private struct FilesSettingsView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var newExtension = ""
+    @State private var extensionError: String?
 
     var body: some View {
         Form {
-            Section("Selected File Types") {
+            Section("Supported by Viewer") {
                 ForEach(DocumentKind.selectableKinds, id: \.self) { kind in
                     Toggle(
                         kind.label,
@@ -160,12 +162,51 @@ private struct FilesSettingsView: View {
                 }
             }
 
-            Text("\"Show selected files only\" in the sidebar options menu shows only these file types. Folders stay when they contain a shown file. All types are selected by default.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Section {
+                ForEach(model.extraFileExtensions, id: \.self) { ext in
+                    HStack {
+                        Text(".\(ext)")
+                        Spacer()
+                        Button {
+                            model.removeExtraFileExtension(ext)
+                        } label: {
+                            Image(systemName: "minus.circle")
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Remove .\(ext)")
+                    }
+                }
+                HStack(alignment: .center, spacing: 8) {
+                    TextField("Extension", text: $newExtension, prompt: Text("Extension, e.g. txt"))
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit(addExtension)
+                    Button("Add", action: addExtension)
+                }
+                if let extensionError {
+                    Text(extensionError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            } header: {
+                Text("Other types (open in the default app)")
+            } footer: {
+                Text("\"Show selected files only\" in the sidebar options menu shows only these file types. Folders stay when they contain a shown file. Supported types are previewed or edited in Viewer; other types you add are listed in the tree and open in the macOS default app.")
+            }
+
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    private func addExtension() {
+        let raw = newExtension
+        if model.addExtraFileExtension(raw) {
+            newExtension = ""
+            extensionError = nil
+        } else {
+            extensionError = "Invalid, already supported by Viewer, or already added."
+        }
     }
 }
 

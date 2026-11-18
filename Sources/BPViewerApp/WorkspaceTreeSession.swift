@@ -16,6 +16,7 @@ final class WorkspaceTreeSession {
         var treeScrollOffset = 0.0
         var showSelectedFilesOnly = true
         var selectedFileKinds = Set(DocumentKind.selectableKinds)
+        var extraFileExtensions: Set<String> = []
         var showHiddenFiles = false
         var isScanning = false
         var isFiltering = false
@@ -78,6 +79,7 @@ final class WorkspaceTreeSession {
         treeScrollOffset: Double,
         showSelectedFilesOnly: Bool,
         selectedFileKinds: Set<DocumentKind>,
+        extraFileExtensions: Set<String> = [],
         showHiddenFiles: Bool,
         automaticSingleChildExpansion: Bool,
         isRootCollapsed: Bool = false
@@ -87,6 +89,7 @@ final class WorkspaceTreeSession {
         state.treeScrollOffset = max(treeScrollOffset, 0)
         state.showSelectedFilesOnly = showSelectedFilesOnly
         state.selectedFileKinds = selectedFileKinds
+        state.extraFileExtensions = extraFileExtensions
         state.showHiddenFiles = showHiddenFiles
         automaticSingleChildExpansionPending = automaticSingleChildExpansion
         automaticSingleChildExpansionBasePath = nil
@@ -251,6 +254,12 @@ final class WorkspaceTreeSession {
 
     func setSelectedFileKinds(_ kinds: Set<DocumentKind>) {
         state.selectedFileKinds = kinds
+        emitState()
+        applyTreeFilter()
+    }
+
+    func setExtraFileExtensions(_ extensions: Set<String>) {
+        state.extraFileExtensions = extensions
         emitState()
         applyTreeFilter()
     }
@@ -421,7 +430,8 @@ final class WorkspaceTreeSession {
     var fileKindFilter: FileKindFilter {
         FileKindFilter(
             showsOnlySelectedKinds: state.showSelectedFilesOnly,
-            selectedKinds: state.selectedFileKinds
+            selectedKinds: state.selectedFileKinds,
+            extraExtensions: state.extraFileExtensions
         )
     }
 

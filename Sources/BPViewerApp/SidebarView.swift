@@ -422,7 +422,7 @@ struct FileTreeRow: View {
 }
 
 /// A folder's collapse button. It is drawn only while the pointer is over its
-/// own slot; the button stays hit-testable while transparent, so entering the
+/// slot (the button plus a bounded area around it); the button stays hit-testable while transparent, so entering the
 /// slot is what reveals it.
 struct FolderCollapseSlot: View {
     let helpText: String
@@ -432,8 +432,14 @@ struct FolderCollapseSlot: View {
     var body: some View {
         CollapseFoldersButton(systemName: "chevron.up", helpText: helpText, action: action)
             .opacity(isHovering ? 1 : 0)
+            .frame(width: Self.hoverWidth, height: BPTokens.Size.row, alignment: .trailing)
+            .contentShape(Rectangle())
             .onHover { isHovering = $0 }
     }
+
+    /// The pointer reveals the button from this far left of it, over the row's
+    /// full height; a bounded zone, never the whole row.
+    private static let hoverWidth: CGFloat = 72
 }
 
 struct TreeLoadingRow: View {

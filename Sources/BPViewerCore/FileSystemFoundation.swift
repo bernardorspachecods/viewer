@@ -54,17 +54,49 @@ public enum DocumentKind: String, Hashable, Sendable, CaseIterable {
 public struct FileKindFilter: Equatable, Sendable {
     public var showsOnlySelectedKinds: Bool
     public var selectedKinds: Set<DocumentKind>
+    /// Extra extensions (lowercase, no dot) the user chose to show. They apply only to
+    /// files the app does not support; a supported kind follows `selectedKinds`.
+    public var extraExtensions: Set<String>
 
     public init(
         showsOnlySelectedKinds: Bool = true,
-        selectedKinds: Set<DocumentKind> = Set(DocumentKind.selectableKinds)
+        selectedKinds: Set<DocumentKind> = Set(DocumentKind.selectableKinds),
+        extraExtensions: Set<String> = []
     ) {
         self.showsOnlySelectedKinds = showsOnlySelectedKinds
         self.selectedKinds = selectedKinds
+        self.extraExtensions = extraExtensions
     }
 
     public func admits(_ kind: DocumentKind) -> Bool {
         !showsOnlySelectedKinds || selectedKinds.contains(kind)
+    }
+
+    public func admits(_ node: FileNode) -> Bool {
+        if admits(node.kind) { return true }
+        return node.kind == .other && extraExtensions.contains(node.url.pathExtension.lowercased())
+    }
+}
+
+/// Normalizes user input such as " .TXT " to "txt"; nil when nothing usable remains.
+public enum FileExtensionInput {
+    public static func normalized(_ raw: String) -> String? {
+        var text = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        while text.hasPrefix(".") { text.removeFirst() }
+        guard !text.isEmpty,
+              text.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" || $0 == "-" || $0 == "+" })
+        else { return nil }
+        return text
+    }
+
+    /// Adds a normalized extension; returns nil when it is invalid, already
+    /// supported by the app, or already in the list.
+    public static func adding(_ raw: String, to list: [String]) -> [String]? {
+        guard let ext = normalized(raw),
+              DocumentKind(url: URL(fileURLWithPath: "x." + ext)) == .other,
+              !list.contains(ext)
+        else { return nil }
+        return list + [ext]
     }
 }
 
@@ -133,7 +165,7 @@ public struct FileSystemScanner: Sendable {
                 || node.title.lowercased().contains(normalizedQuery)
                 || node.relativePath.lowercased().contains(normalizedQuery)
             guard matchesQuery else { return nil }
-            guard node.isDirectory || kindFilter.admits(node.kind) else { return nil }
+            guard node.isDirectory || kindFilter.admits(node) else { return nil }
 
             guard node.isDirectory else { return node }
             return FileNode(
@@ -239,7 +271,7 @@ public struct FileSystemScanner: Sendable {
             )
         }
 
-        guard kindFilter.admits(node.kind) else { return nil }
+        guard kindFilter.admits(node) else { return nil }
         guard matchesQuery else { return nil }
         return node
     }

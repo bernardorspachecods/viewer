@@ -45,6 +45,7 @@ extension AppModel {
             treeScrollOffset: savedWorkspace.treeScrollOffset,
             showSelectedFilesOnly: savedWorkspace.showSelectedFilesOnly,
             selectedFileKinds: selectedFileKinds,
+            extraFileExtensions: Set(extraFileExtensions),
             showHiddenFiles: savedWorkspace.showHiddenFiles,
             automaticSingleChildExpansion: !workspaceSession.hasWorkspaceState(for: rootURL),
             isRootCollapsed: savedWorkspace.isRootCollapsed

@@ -92,7 +92,7 @@ extension WorkspaceTreeSession {
             let oldNode = visibleNodes.first(where: { $0.id == node.id })
 
             if !node.isDirectory {
-                guard fileKindFilter.admits(node.kind) else { return nil }
+                guard fileKindFilter.admits(node) else { return nil }
                 return node
             }
 

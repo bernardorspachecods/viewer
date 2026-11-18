@@ -15,8 +15,13 @@ tags: [behavior, settings, persistence]
 - Workspaces tab: the default workspace folders. Add folders with `Add Folder…` and
   remove them with the minus button. Their launch behavior is in
   [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
-- Files tab: the file types the tree shows. By default these are Markdown, LaTeX,
-  JSON, CSV, Word, PDF, and images. See [file-tree.md](/docs/behavior/file-tree.md).
+- Files tab: the file types the tree shows. Two sections:
+  - "Supported by Viewer": Markdown, LaTeX, JSON, CSV, Word, PDF, and images. These
+    are the only types Viewer opens itself. All are on by default.
+  - "Other types": extensions you add (for example `txt`), shown in the tree and
+    opened in the macOS default app. An extension Viewer already supports, an
+    invalid one, or a duplicate is rejected. Extensions are case-insensitive.
+  See [file-tree.md](/docs/behavior/file-tree.md).
 
 ## Kept across restarts
 
@@ -26,7 +31,7 @@ tags: [behavior, settings, persistence]
   the show-selected-files toggle.
 - Per document: zoom, outline width and visibility, and reading position.
 - Global: theme, sidebar width and visibility, default zoom levels, `shell escape`,
-  default workspace folders, and selected file types.
+  default workspace folders, selected file types, and extra extensions.
 - Snapshots, until you close them.
 
 ## Not kept across restarts

@@ -14,7 +14,8 @@ tags: [behavior, sidebar, file-tree]
 - The tree loads the first level and expands folders on demand. Expansion,
   scroll position, and filter state are kept per workspace.
 - "Show selected files only" is on by default, in the sidebar options menu. When
-  it is on, only files whose type is checked in Settings > Files are shown; a
+  it is on, only files whose type is checked in Settings > Files, or whose extension
+  was added there under "Other types", are shown; a
   folder stays when it contains a shown file. Turning it off shows all files.
 - Selecting a file opens or focuses its tab when the app supports its type. Other
   files open in the macOS default app.
@@ -40,8 +41,8 @@ tags: [behavior, sidebar, file-tree]
 - The root button is shown while the listing is hidden, and while the listing has
   subfolders. Revealing a file in the sidebar shows the listing first.
 - A folder with at least one subfolder has a collapse button while it is open.
-  The button is hidden until the pointer is over the button itself, not the whole
-  row. A press takes one step:
+  The button is hidden until the pointer enters a bounded area around it (the
+  button, 72 pt wide and one row tall), not the whole row. A press takes one step:
   - If an open folder sits inside it, the press closes every folder inside it and
     keeps the folder open.
   - Otherwise the press closes the folder itself with its branch.
@@ -59,7 +60,7 @@ tags: [behavior, sidebar, file-tree]
 
 - Tree rows cannot be dragged. Per-row drag support made scrolling slow in large
   trees with hidden files shown. Hover is tracked only on the collapse button's
-  own slot, of open folders that have subfolders; no other row is tracked, and
+  slot (the 72 pt area around it), of open folders that have subfolders; no other row is tracked, and
   the folder row itself is not. Tab reordering is separate; see
   [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
 - Limits of the tree on very large or unusual folders (permission-denied

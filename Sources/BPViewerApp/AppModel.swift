@@ -36,6 +36,7 @@ final class AppModel: ObservableObject {
     @Published var showSelectedFilesOnly = true
     /// File kinds shown by "Show selected files only", mirrored from the shared session.
     @Published var selectedFileKinds: Set<DocumentKind>
+    @Published var extraFileExtensions: [String]
     @Published var showHiddenFiles = false
     @Published var expandedPaths: Set<String> = []
     /// The workspace root's listing is hidden, mirrored from the tree session.
@@ -133,6 +134,7 @@ final class AppModel: ObservableObject {
         latexShellEscapeMode = LatexShellEscapeMode(rawValue: configuration.latexShellEscapeMode) ?? .disabled
         defaultWorkspaceFolders = workspaceSession.defaultWorkspaceFolderPaths
         selectedFileKinds = workspaceSession.selectedFileKinds
+        extraFileExtensions = workspaceSession.extraFileExtensions
         defaultMarkdownZoom = min(max(configuration.defaultMarkdownZoom, 0.7), 2.0)
         defaultLatexZoom = min(max(configuration.defaultLatexZoom, 0.7), 2.0)
 

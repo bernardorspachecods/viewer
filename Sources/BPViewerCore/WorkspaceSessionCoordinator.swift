@@ -73,6 +73,22 @@ public final class WorkspaceSessionCoordinator {
         updateGlobal { $0.selectedFileKinds = stored }
     }
 
+    /// Extra extensions shown by "Show selected files only"; invalid stored values are dropped.
+    public var extraFileExtensions: [String] {
+        state.global.extraFileExtensions.compactMap(FileExtensionInput.normalized)
+    }
+
+    @discardableResult
+    public func addExtraFileExtension(_ raw: String) -> Bool {
+        guard let updated = FileExtensionInput.adding(raw, to: extraFileExtensions) else { return false }
+        updateGlobal { $0.extraFileExtensions = updated }
+        return true
+    }
+
+    public func removeExtraFileExtension(_ ext: String) {
+        updateGlobal { $0.extraFileExtensions.removeAll { $0 == ext } }
+    }
+
     /// Standardized folder paths opened when the previous session cannot be restored, in order.
     public var defaultWorkspaceFolderPaths: [String] {
         state.global.defaultWorkspaceFolders

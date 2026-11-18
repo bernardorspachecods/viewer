@@ -37,7 +37,9 @@ extension AppModel {
         latexShellEscapeMode = source.latexShellEscapeMode
         defaultWorkspaceFolders = source.defaultWorkspaceFolders
         selectedFileKinds = source.selectedFileKinds
+        extraFileExtensions = source.extraFileExtensions
         workspaceTreeSession.setSelectedFileKinds(selectedFileKinds)
+        workspaceTreeSession.setExtraFileExtensions(Set(extraFileExtensions))
         applyDefaultZoom(defaultMarkdownZoom, to: .markdown)
         applyDefaultZoom(defaultLatexZoom, to: .latex)
     }
