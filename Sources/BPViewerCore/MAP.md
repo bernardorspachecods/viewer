@@ -22,4 +22,4 @@ description: "UI-independent Viewer logic: filesystem scanning, session and tab 
 - [CSVAdapter.swift](/Sources/BPViewerCore/CSVAdapter.swift) parses CSV and generates preview HTML.
 - [DocumentDiff.swift](/Sources/BPViewerCore/DocumentDiff.swift) provides diff modes, baselines, providers, and comparison logic.
 
-Keep public contracts aligned with [current app behavior](/docs/current-state.md). Runners exercise this module before relying on UI behavior.
+Keep public contracts aligned with [current app behavior](/docs/MAP.md). Runners exercise this module before relying on UI behavior.

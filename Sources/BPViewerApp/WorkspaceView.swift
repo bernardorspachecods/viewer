@@ -388,83 +388,9 @@ struct DocumentSurfaceView: View {
 struct PreviewPane: View {
     @EnvironmentObject private var model: AppModel
     let tab: DocumentTab
-    @State private var isTitleRowHovered = false
-    @State private var isPathRowHovered = false
-    @State private var isUpdatedInfoHovered = false
-
-    private var previewHeader: some View {
-        let path = tab.isUntitled
-            ? "Not saved"
-            : FilePathCopy.string(
-                for: tab.kind == .latex ? tab.editableSourceURL : tab.url
-            )
-
-        return HStack {
-            HStack(alignment: .firstTextBaseline, spacing: BPTokens.Spacing.xs) {
-                HStack(spacing: BPTokens.Spacing.xxs) {
-                    Text(tab.title)
-                        .font(.title2.weight(.semibold))
-                        .fixedSize(horizontal: true, vertical: false)
-                        .textSelection(.enabled)
-                        .contextMenu {
-                            Button("Copy Title") { model.copyText(tab.title) }
-                        }
-                    CopyTextButton(text: tab.title, isVisible: isTitleRowHovered) {
-                        model.copyText($0)
-                    }
-                }
-                .onHover { isTitleRowHovered = $0 }
-
-                HStack(spacing: BPTokens.Spacing.xxs) {
-                    Text(path)
-                        .font(BPTokens.Typography.caption)
-                        .foregroundStyle(BPTokens.Color.muted)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .layoutPriority(1)
-                        .textSelection(.enabled)
-                        .contextMenu {
-                            if !tab.isUntitled {
-                                Button("Copy Path") { model.copyPath(tab.url) }
-                            }
-                        }
-                    CopyTextButton(text: path, isVisible: isPathRowHovered, helpText: "Copy Path") {
-                        model.copyText($0)
-                    }
-                }
-            .onHover { isPathRowHovered = $0 }
-            }
-            Spacer()
-            HStack(alignment: .center, spacing: BPTokens.Spacing.xxs) {
-                ToolbarIconButton(systemName: "arrow.clockwise", help: "Refresh Preview") {
-                    model.refreshActiveTab()
-                }
-                .opacity(isUpdatedInfoHovered ? 1 : 0)
-                .allowsHitTesting(isUpdatedInfoHovered)
-                .accessibilityHidden(!isUpdatedInfoHovered)
-                if let updatedAt = tab.previewUpdatedAt {
-                    Text("Updated \(updatedAt.formatted(date: .abbreviated, time: .shortened))")
-                        .font(BPTokens.Typography.caption)
-                        .foregroundStyle(BPTokens.Color.muted)
-                }
-                StatusBadge(status: tab.status, showsLabel: false)
-            }
-            .onHover { isUpdatedInfoHovered = $0 }
-        }
-        .padding(.horizontal, BPTokens.Spacing.md)
-        .padding(.vertical, BPTokens.Spacing.xs)
-        .overlay(alignment: .center) {
-            previewErrorOverlay(showingStalePreview: tab.isStale)
-        }
-    }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Keep the header in reader windows only to surface errors.
-            if !model.isReaderWindow || tab.errorMessage != nil {
-                previewHeader
-                Divider()
-            }
             if model.isFindBarVisible {
                 PreviewFindBar()
             }
@@ -839,6 +765,9 @@ struct PreviewPane: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(BPTokens.Color.canvas)
+        .overlay(alignment: .top) {
+            previewErrorOverlay(showingStalePreview: tab.isStale)
+        }
     }
 
     @ViewBuilder

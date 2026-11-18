@@ -398,6 +398,26 @@ public struct AppState: Codable, Sendable {
     }
 }
 
+/// Pure list rules for the default workspace folders, kept separate from
+/// persistence so they can be checked without UserDefaults or a window.
+public enum DefaultWorkspaceFolders {
+    /// Appends `path` unless it is already listed, keeping the existing order.
+    public static func adding(_ path: String, to paths: [String]) -> [String] {
+        paths.contains(path) ? paths : paths + [path]
+    }
+
+    public static func removing(_ path: String, from paths: [String]) -> [String] {
+        paths.filter { $0 != path }
+    }
+
+    /// Drops repeated paths, keeping the first occurrence of each.
+    public static func deduplicated(_ paths: [String]) -> [String] {
+        paths.reduce(into: [String]()) { result, path in
+            result = adding(path, to: result)
+        }
+    }
+}
+
 public struct GlobalState: Codable, Sendable {
     public var theme = "dark"
     public var sidebarVisible = true
@@ -405,10 +425,14 @@ public struct GlobalState: Codable, Sendable {
     public var latexShellEscapeMode = "disabled"
     public var defaultMarkdownZoom = 1.0
     public var defaultLatexZoom = 1.0
+    /// Opened when the previous session cannot be restored; empty means the home folder.
+    public var defaultWorkspaceFolders: [String] = []
+    /// Raw values of the `DocumentKind`s shown by "Show selected files only".
+    public var selectedFileKinds: [String] = DocumentKind.selectableKinds.map(\.rawValue)
 
     private enum CodingKeys: String, CodingKey {
         case theme, sidebarVisible, sidebarWidth, latexShellEscapeMode
-        case defaultMarkdownZoom, defaultLatexZoom
+        case defaultMarkdownZoom, defaultLatexZoom, defaultWorkspaceFolders, selectedFileKinds
     }
 
     public init() {}
@@ -421,6 +445,9 @@ public struct GlobalState: Codable, Sendable {
         latexShellEscapeMode = try container.decodeIfPresent(String.self, forKey: .latexShellEscapeMode) ?? "disabled"
         defaultMarkdownZoom = try container.decodeIfPresent(Double.self, forKey: .defaultMarkdownZoom) ?? 1.0
         defaultLatexZoom = try container.decodeIfPresent(Double.self, forKey: .defaultLatexZoom) ?? 1.0
+        defaultWorkspaceFolders = try container.decodeIfPresent([String].self, forKey: .defaultWorkspaceFolders) ?? []
+        selectedFileKinds = try container.decodeIfPresent([String].self, forKey: .selectedFileKinds)
+            ?? DocumentKind.selectableKinds.map(\.rawValue)
     }
 }
 
@@ -484,7 +511,8 @@ public struct WorkspaceState: Codable, Sendable {
     public var tabContexts: [String: String] = [:]
     public var expandedPaths: [String] = []
     public var treeScrollOffset = 0.0
-    public var compatibleOnly = true
+    /// Persisted under the original `compatibleOnly` key, so older state still loads.
+    public var showSelectedFilesOnly = true
     public var showHiddenFiles = false
     public var latexRootSelections: [String: String] = [:]
     public var latexExternalGrants: [String: [String]] = [:]
@@ -493,7 +521,8 @@ public struct WorkspaceState: Codable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case tabPaths, activeTabPath, tabContexts, expandedPaths, treeScrollOffset
-        case compatibleOnly, showHiddenFiles, latexRootSelections, latexExternalGrants, securityScopedBookmark, snapshots
+        case showSelectedFilesOnly = "compatibleOnly"
+        case showHiddenFiles, latexRootSelections, latexExternalGrants, securityScopedBookmark, snapshots
     }
 
     public init() {}
@@ -505,7 +534,7 @@ public struct WorkspaceState: Codable, Sendable {
         tabContexts = try container.decodeIfPresent([String: String].self, forKey: .tabContexts) ?? [:]
         expandedPaths = try container.decodeIfPresent([String].self, forKey: .expandedPaths) ?? []
         treeScrollOffset = try container.decodeIfPresent(Double.self, forKey: .treeScrollOffset) ?? 0
-        compatibleOnly = try container.decodeIfPresent(Bool.self, forKey: .compatibleOnly) ?? true
+        showSelectedFilesOnly = try container.decodeIfPresent(Bool.self, forKey: .showSelectedFilesOnly) ?? true
         showHiddenFiles = try container.decodeIfPresent(Bool.self, forKey: .showHiddenFiles) ?? false
         latexRootSelections = try container.decodeIfPresent([String: String].self, forKey: .latexRootSelections) ?? [:]
         latexExternalGrants = try container.decodeIfPresent([String: [String]].self, forKey: .latexExternalGrants) ?? [:]

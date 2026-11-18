@@ -13,7 +13,8 @@ final class WorkspaceTreeSession {
         var nodes: [FileNode] = []
         var expandedPaths: Set<String> = []
         var treeScrollOffset = 0.0
-        var compatibleOnly = true
+        var showSelectedFilesOnly = true
+        var selectedFileKinds = Set(DocumentKind.selectableKinds)
         var showHiddenFiles = false
         var isScanning = false
         var isFiltering = false
@@ -73,13 +74,15 @@ final class WorkspaceTreeSession {
     func restore(
         expandedPaths: Set<String>,
         treeScrollOffset: Double,
-        compatibleOnly: Bool,
+        showSelectedFilesOnly: Bool,
+        selectedFileKinds: Set<DocumentKind>,
         showHiddenFiles: Bool,
         automaticSingleChildExpansion: Bool
     ) {
         state.expandedPaths = expandedPaths
         state.treeScrollOffset = max(treeScrollOffset, 0)
-        state.compatibleOnly = compatibleOnly
+        state.showSelectedFilesOnly = showSelectedFilesOnly
+        state.selectedFileKinds = selectedFileKinds
         state.showHiddenFiles = showHiddenFiles
         automaticSingleChildExpansionPending = automaticSingleChildExpansion
         automaticSingleChildExpansionBasePath = nil
@@ -236,8 +239,14 @@ final class WorkspaceTreeSession {
         }
     }
 
-    func setCompatibleOnly(_ value: Bool) {
-        state.compatibleOnly = value
+    func setShowSelectedFilesOnly(_ value: Bool) {
+        state.showSelectedFilesOnly = value
+        emitState()
+        applyTreeFilter()
+    }
+
+    func setSelectedFileKinds(_ kinds: Set<DocumentKind>) {
+        state.selectedFileKinds = kinds
         emitState()
         applyTreeFilter()
     }
@@ -378,19 +387,26 @@ final class WorkspaceTreeSession {
         onStateChange(state)
     }
 
+    private var fileKindFilter: FileKindFilter {
+        FileKindFilter(
+            showsOnlySelectedKinds: state.showSelectedFilesOnly,
+            selectedKinds: state.selectedFileKinds
+        )
+    }
+
     private func applyTreeFilter() {
         treeFilterGeneration += 1
         let generation = treeFilterGeneration
         let scanner = scanner
         let completeNodes = completeNodes
-        let compatibleOnly = state.compatibleOnly
+        let kindFilter = fileKindFilter
 
         treeFilterTask?.cancel()
         state.isFiltering = true
         emitState()
         treeFilterTask = Task { [weak self] in
             let filteredNodes = await Task.detached(priority: .userInitiated) {
-                scanner.filter(completeNodes, compatibleOnly: compatibleOnly, query: "")
+                scanner.filter(completeNodes, kindFilter: kindFilter, query: "")
             }.value
 
             guard let self,
@@ -492,7 +508,7 @@ final class WorkspaceTreeSession {
             let oldNode = visibleNodes.first(where: { $0.id == node.id })
 
             if !node.isDirectory {
-                guard !state.compatibleOnly || node.kind != .other else { return nil }
+                guard fileKindFilter.admits(node.kind) else { return nil }
                 return node
             }
 
@@ -504,7 +520,7 @@ final class WorkspaceTreeSession {
             if isDirectlyAffected {
                 let filteredChildren = scanner.filter(
                     node.children,
-                    compatibleOnly: state.compatibleOnly,
+                    kindFilter: fileKindFilter,
                     query: ""
                 )
                 var updatedNode = node
@@ -515,7 +531,7 @@ final class WorkspaceTreeSession {
             guard hasAffectedDescendant else {
                 return oldNode ?? scanner.filter(
                     [node],
-                    compatibleOnly: state.compatibleOnly,
+                    kindFilter: fileKindFilter,
                     query: ""
                 ).first
             }

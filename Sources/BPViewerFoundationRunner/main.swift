@@ -22,6 +22,8 @@ private struct Runner {
         runScannerContracts(root: fixture)
         runDocumentTabSessionContracts(root: fixture)
         runDocumentOpenContracts(root: fixture)
+        runDefaultWorkspaceContracts(root: fixture)
+        runFileKindContracts()
         runPathCopyContracts(root: fixture)
         runCSVContracts()
         runMarkdownEditingContracts()
@@ -66,7 +68,7 @@ private struct Runner {
         expect(topLevel.first(where: { $0.title == "docs" })?.childrenLoaded == false, "top-level scan is lazy")
         expect(topLevel.first(where: { $0.title == "empty" })?.children.isEmpty == true, "empty directory has no eager children")
 
-        let compatible = scanner.filter(topLevel, compatibleOnly: true, query: "")
+        let compatible = scanner.filter(topLevel, kindFilter: FileKindFilter(), query: "")
         expect(compatible.map(\.title) == ["docs", "empty", "config.json", "README.md", "report.docx", "sample.pdf"], "compatible filter keeps unknown lazy directories")
 
         let docsURL = root.appendingPathComponent("docs", isDirectory: true)
@@ -79,20 +81,35 @@ private struct Runner {
         expect(docs?.childrenLoaded == true, "full scan loads descendants")
         expect(docs?.children.first(where: { $0.title == "nested" })?.childrenLoaded == true, "full scan loads nested descendants")
 
-        let search = scanner.filter(complete, compatibleOnly: true, query: "  DEEP  ")
+        let search = scanner.filter(complete, kindFilter: FileKindFilter(), query: "  DEEP  ")
         expect(search.first?.title == "docs", "search is case-insensitive and trims whitespace")
         expect(search.first?.children.first?.title == "nested", "search preserves matching ancestor chain")
         expect(search.first?.children.first?.children.first?.title == "deep.tex", "search reaches nested compatible file")
 
-        let topLevelSearch = scanner.filterTopLevel(complete, compatibleOnly: true, query: "  DOCS  ")
+        let topLevelSearch = scanner.filterTopLevel(complete, kindFilter: FileKindFilter(), query: "  DOCS  ")
         expect(topLevelSearch.map(\.title) == ["docs"], "top-level search matches only root entries")
         expect(topLevelSearch.first?.children.isEmpty == true, "top-level search does not return descendants")
-        expect(scanner.filterTopLevel(complete, compatibleOnly: true, query: "DEEP").isEmpty, "top-level search ignores nested entries")
+        expect(scanner.filterTopLevel(complete, kindFilter: FileKindFilter(), query: "DEEP").isEmpty, "top-level search ignores nested entries")
 
-        let allFiles = scanner.filter(topLevel, compatibleOnly: false, query: "")
+        let allFiles = scanner.filter(topLevel, kindFilter: FileKindFilter(showsOnlySelectedKinds: false), query: "")
         expect(allFiles.map(\.title) == ["docs", "empty", "config.json", "README.md", "report.docx", "sample.pdf", "zeta.txt"], "unfiltered tree keeps all visible entries")
         expect(scanner.scan(root: root.appendingPathComponent("missing")) .isEmpty, "missing root is non-fatal")
         expect(DocumentKind(url: root.appendingPathComponent("sample.PDF")) == .pdf, "PDF files are recognized case-insensitively")
+
+        let markdownOnly = FileKindFilter(showsOnlySelectedKinds: true, selectedKinds: [.markdown])
+        let markdownTopLevel = scanner.filterTopLevel(topLevel, kindFilter: markdownOnly, query: "")
+        expect(markdownTopLevel.map(\.title) == ["docs", "empty", "README.md"], "markdown-only top level keeps folders and markdown files")
+        let markdownTree = scanner.filter(complete, kindFilter: markdownOnly, query: "")
+        expect(markdownTree.map(\.title) == ["docs", "README.md"], "markdown-only tree drops other kinds and empty folders")
+        expect(markdownTree.first?.children.map(\.title) == ["inside.md"], "markdown-only tree keeps only markdown inside folders")
+        expect(
+            scanner.filter(complete, kindFilter: FileKindFilter(showsOnlySelectedKinds: true, selectedKinds: []), query: "").isEmpty,
+            "selecting no kinds hides every file"
+        )
+        expect(
+            scanner.filter(complete, kindFilter: FileKindFilter(showsOnlySelectedKinds: false, selectedKinds: []), query: "").count == 7,
+            "turning the option off ignores the selected kinds"
+        )
 
         do {
             let formatted = try JSONPreviewAdapter().format(source: "{\"z\": 1, \"a\": [true, null]}")
@@ -447,6 +464,102 @@ private struct Runner {
         let restored = AppStateStore(defaults: defaults).load()
         expect(restored.global.sidebarWidth == 340, "session models persist global state")
         expect(restored.workspaceStates["workspace"] != nil, "session models persist workspace state")
+    }
+
+    private mutating func runDefaultWorkspaceContracts(root: URL) {
+        expect(
+            DefaultWorkspaceFolders.deduplicated(["/a", "/b", "/a"]) == ["/a", "/b"],
+            "default workspace list keeps the first occurrence in order"
+        )
+        expect(
+            DefaultWorkspaceFolders.removing("/a", from: ["/a", "/b"]) == ["/b"],
+            "default workspace removal drops only the given path"
+        )
+
+        let suiteName = "bp-viewer-defaults-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let folderA = root.appendingPathComponent("docs", isDirectory: true)
+        let folderB = root.appendingPathComponent("empty", isDirectory: true)
+        let folderC = root.appendingPathComponent("docs/nested", isDirectory: true)
+
+        MainActor.assumeIsolated {
+            let storeDefaults = UserDefaults(suiteName: suiteName)!
+            let first = WorkspaceSessionCoordinator(store: AppStateStore(defaults: storeDefaults))
+            expect(first.defaultWorkspaceFolderPaths.isEmpty, "default workspace list starts empty")
+
+            first.addDefaultWorkspaceFolder(folderA)
+            first.addDefaultWorkspaceFolder(folderB)
+            first.addDefaultWorkspaceFolder(folderA)
+            first.addDefaultWorkspaceFolder(folderC)
+            first.removeDefaultWorkspaceFolder(path: first.defaultWorkspaceFolderPaths[2])
+
+            let reloaded = WorkspaceSessionCoordinator(store: AppStateStore(defaults: storeDefaults))
+            expect(
+                reloaded.defaultWorkspaceFolderPaths == [
+                    folderA.resolvingSymlinksInPath().standardizedFileURL.path,
+                    folderB.resolvingSymlinksInPath().standardizedFileURL.path,
+                ],
+                "default workspace folders persist in order without duplicates or removed entries"
+            )
+        }
+
+        let legacyJSON = Data(#"{"schemaVersion":2,"global":{"theme":"light","launchBehavior":"openFolders","launchFolderPaths":["/x"]}}"#.utf8)
+        let legacy = try? JSONDecoder().decode(AppState.self, from: legacyJSON)
+        expect(
+            legacy?.global.theme == "light" && legacy?.global.defaultWorkspaceFolders == [],
+            "state with the earlier launch keys decodes safely with an empty default list"
+        )
+    }
+
+    private mutating func runFileKindContracts() {
+        expect(
+            DocumentKind.selectableKinds.count == 7 && !DocumentKind.selectableKinds.contains(.other),
+            "selectable file kinds are every known kind except other"
+        )
+        expect(
+            FileKindFilter().admits(.markdown) && FileKindFilter().admits(.image) && !FileKindFilter().admits(.other),
+            "default file filter admits every selectable kind and never other"
+        )
+
+        let suiteName = "bp-viewer-kinds-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        MainActor.assumeIsolated {
+            let storeDefaults = UserDefaults(suiteName: suiteName)!
+            let first = WorkspaceSessionCoordinator(store: AppStateStore(defaults: storeDefaults))
+            expect(first.selectedFileKinds == Set(DocumentKind.selectableKinds), "selected file kinds default to every supported kind")
+
+            first.setSelectedFileKinds([.pdf, .markdown])
+            let reloaded = WorkspaceSessionCoordinator(store: AppStateStore(defaults: storeDefaults))
+            expect(reloaded.selectedFileKinds == [.markdown, .pdf], "selected file kinds persist across sessions")
+        }
+
+        let corruptJSON = Data(#"{"schemaVersion":2,"global":{"selectedFileKinds":["markdown","other","bogus"]}}"#.utf8)
+        let corrupt = try? JSONDecoder().decode(AppState.self, from: corruptJSON)
+        expect(
+            corrupt?.global.selectedFileKinds == ["markdown", "other", "bogus"],
+            "stored kind names decode as written"
+        )
+        MainActor.assumeIsolated {
+            let storeDefaults = UserDefaults(suiteName: suiteName)!
+            var state = AppState()
+            state.global.selectedFileKinds = ["markdown", "other", "bogus"]
+            AppStateStore(defaults: storeDefaults).save(state)
+            let coordinator = WorkspaceSessionCoordinator(store: AppStateStore(defaults: storeDefaults))
+            expect(coordinator.selectedFileKinds == [.markdown], "unknown and non-selectable stored kinds are ignored")
+        }
+
+        let legacyWorkspace = try? JSONDecoder().decode(WorkspaceState.self, from: Data(#"{"compatibleOnly":false}"#.utf8))
+        expect(legacyWorkspace?.showSelectedFilesOnly == false, "saved compatibleOnly key still restores the workspace toggle")
+        let emptyWorkspace = try? JSONDecoder().decode(WorkspaceState.self, from: Data("{}".utf8))
+        expect(emptyWorkspace?.showSelectedFilesOnly == true, "workspace toggle defaults to showing selected files only")
+        let legacyGlobal = try? JSONDecoder().decode(AppState.self, from: Data(#"{"schemaVersion":2,"global":{"theme":"dark"}}"#.utf8))
+        expect(
+            legacyGlobal?.global.selectedFileKinds == DocumentKind.selectableKinds.map(\.rawValue),
+            "state saved before file kind selection selects every supported kind"
+        )
     }
 
     private mutating func runMarkdownEditingContracts() {

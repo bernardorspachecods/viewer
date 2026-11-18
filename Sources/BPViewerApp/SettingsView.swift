@@ -19,6 +19,16 @@ struct SettingsView: View {
                     Label("Appearance", systemImage: "paintbrush")
                 }
 
+            WorkspacesSettingsView()
+                .tabItem {
+                    Label("Workspaces", systemImage: "folder")
+                }
+
+            FilesSettingsView()
+                .tabItem {
+                    Label("Files", systemImage: "doc.on.doc")
+                }
+
             LatexSettingsView()
                 .tabItem {
                     Label("LaTeX", systemImage: "doc.text")
@@ -130,6 +140,83 @@ private struct AppearanceSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+    }
+}
+
+private struct FilesSettingsView: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Form {
+            Section("Selected File Types") {
+                ForEach(DocumentKind.selectableKinds, id: \.self) { kind in
+                    Toggle(
+                        kind.label,
+                        isOn: Binding(
+                            get: { model.selectedFileKinds.contains(kind) },
+                            set: { model.setFileKind(kind, selected: $0) }
+                        )
+                    )
+                }
+            }
+
+            Text("\"Show selected files only\" in the sidebar options menu shows only these file types. Folders stay when they contain a shown file. All types are selected by default.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .formStyle(.grouped)
+        .padding()
+    }
+}
+
+private struct WorkspacesSettingsView: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Form {
+            Section("Default Workspaces") {
+                if model.defaultWorkspaceFolders.isEmpty {
+                    Text("No folders added. Viewer opens your home folder.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(model.defaultWorkspaceFolders, id: \.self) { path in
+                        HStack {
+                            Text(path)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .help(path)
+                            Spacer()
+                            Button {
+                                model.removeDefaultWorkspaceFolder(path: path)
+                            } label: {
+                                Image(systemName: "minus.circle")
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("Remove \(URL(fileURLWithPath: path).lastPathComponent)")
+                        }
+                    }
+                }
+
+                Button("Add Folder…", action: chooseFolder)
+            }
+
+            Text("Opened when Viewer cannot restore the previous session. Empty = your home folder.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .formStyle(.grouped)
+        .padding()
+    }
+
+    private func chooseFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Add Folder"
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        model.addDefaultWorkspaceFolder(url.resolvingSymlinksInPath().standardizedFileURL)
     }
 }
 

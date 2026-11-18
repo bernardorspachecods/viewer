@@ -6,7 +6,7 @@ public enum FilePathCopy {
     }
 }
 
-public enum DocumentKind: String, Hashable, Sendable {
+public enum DocumentKind: String, Hashable, Sendable, CaseIterable {
     case markdown
     case latex
     case json
@@ -29,6 +29,11 @@ public enum DocumentKind: String, Hashable, Sendable {
         }
     }
 
+    /// The kinds a user can choose to show; `other` is never selectable.
+    public static var selectableKinds: [DocumentKind] {
+        allCases.filter { $0 != .other }
+    }
+
     public var label: String {
         switch self {
         case .markdown: "Markdown"
@@ -40,6 +45,26 @@ public enum DocumentKind: String, Hashable, Sendable {
         case .image: "Image"
         case .other: "Unsupported"
         }
+    }
+}
+
+/// Which files the tree shows. When `showsOnlySelectedKinds` is on, a file is
+/// shown only if its kind is selected; when it is off, every file is shown.
+/// Folders follow their contents and are not filtered by kind themselves.
+public struct FileKindFilter: Equatable, Sendable {
+    public var showsOnlySelectedKinds: Bool
+    public var selectedKinds: Set<DocumentKind>
+
+    public init(
+        showsOnlySelectedKinds: Bool = true,
+        selectedKinds: Set<DocumentKind> = Set(DocumentKind.selectableKinds)
+    ) {
+        self.showsOnlySelectedKinds = showsOnlySelectedKinds
+        self.selectedKinds = selectedKinds
+    }
+
+    public func admits(_ kind: DocumentKind) -> Bool {
+        !showsOnlySelectedKinds || selectedKinds.contains(kind)
     }
 }
 
@@ -88,10 +113,10 @@ public struct FileSystemScanner: Sendable {
         makeChildren(of: directory, root: root, recursive: false, showHiddenFiles: showHiddenFiles)
     }
 
-    public func filter(_ nodes: [FileNode], compatibleOnly: Bool, query: String) -> [FileNode] {
+    public func filter(_ nodes: [FileNode], kindFilter: FileKindFilter, query: String) -> [FileNode] {
         let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return nodes.compactMap {
-            filterNode($0, compatibleOnly: compatibleOnly, normalizedQuery: normalizedQuery)
+            filterNode($0, kindFilter: kindFilter, normalizedQuery: normalizedQuery)
         }
     }
 
@@ -99,7 +124,7 @@ public struct FileSystemScanner: Sendable {
     /// inspects or returns descendants, even when a directory was expanded.
     public func filterTopLevel(
         _ nodes: [FileNode],
-        compatibleOnly: Bool,
+        kindFilter: FileKindFilter,
         query: String
     ) -> [FileNode] {
         let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -108,7 +133,7 @@ public struct FileSystemScanner: Sendable {
                 || node.title.lowercased().contains(normalizedQuery)
                 || node.relativePath.lowercased().contains(normalizedQuery)
             guard matchesQuery else { return nil }
-            guard node.isDirectory || !compatibleOnly || node.kind != .other else { return nil }
+            guard node.isDirectory || kindFilter.admits(node.kind) else { return nil }
 
             guard node.isDirectory else { return node }
             return FileNode(
@@ -187,7 +212,7 @@ public struct FileSystemScanner: Sendable {
 
     private func filterNode(
         _ node: FileNode,
-        compatibleOnly: Bool,
+        kindFilter: FileKindFilter,
         normalizedQuery: String
     ) -> FileNode? {
         let matchesQuery = normalizedQuery.isEmpty
@@ -196,13 +221,13 @@ public struct FileSystemScanner: Sendable {
 
         if node.isDirectory {
             let children = node.children.compactMap {
-                filterNode($0, compatibleOnly: compatibleOnly, normalizedQuery: normalizedQuery)
+                filterNode($0, kindFilter: kindFilter, normalizedQuery: normalizedQuery)
             }
             let hasUnknownChildren = !node.childrenLoaded
             let keepForSearch = normalizedQuery.isEmpty || matchesQuery || !children.isEmpty || hasUnknownChildren
-            let keepForCompatibility = !compatibleOnly || hasUnknownChildren || !children.isEmpty
+            let keepForKinds = !kindFilter.showsOnlySelectedKinds || hasUnknownChildren || !children.isEmpty
 
-            guard keepForSearch && keepForCompatibility else { return nil }
+            guard keepForSearch && keepForKinds else { return nil }
             return FileNode(
                 id: node.id,
                 url: node.url,
@@ -214,7 +239,7 @@ public struct FileSystemScanner: Sendable {
             )
         }
 
-        guard !compatibleOnly || node.kind != .other else { return nil }
+        guard kindFilter.admits(node.kind) else { return nil }
         guard matchesQuery else { return nil }
         return node
     }

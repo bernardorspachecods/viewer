@@ -74,10 +74,10 @@ struct SidebarView: View {
             HStack(spacing: BPTokens.Spacing.xs) {
                 Menu {
                     Toggle(isOn: Binding(
-                        get: { model.compatibleOnly },
-                        set: { model.updateCompatibleOnly($0) }
+                        get: { model.showSelectedFilesOnly },
+                        set: { model.updateShowSelectedFilesOnly($0) }
                     )) {
-                        Text("Supported files only")
+                        Text("Show selected files only")
                     }
 
                     Toggle(isOn: Binding(
@@ -128,7 +128,7 @@ struct SidebarView: View {
             .padding(.top, BPTokens.Spacing.xs)
             .padding(.bottom, BPTokens.Spacing.xs)
 
-            TextField("Search files", text: Binding(
+            TextField("Search folders", text: Binding(
                 get: { model.treeQuery },
                 set: { model.updateTreeQuery($0) }
             ))

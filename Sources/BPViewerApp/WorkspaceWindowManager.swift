@@ -82,7 +82,11 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
             session.setOpenWorkspaces(existing + [rootURL], activeRoot: rootURL)
         }
 
-        guard !didRestoreWorkspaces, model.rootURL != nil else { return }
+        // The first ordinary workspace window restores the session, falling back
+        // to the default folders. It may start without a root.
+        guard !didRestoreWorkspaces,
+              !model.isReaderWindow,
+              window.identifier != Self.captureWindowIdentifier else { return }
         didRestoreWorkspaces = true
         DispatchQueue.main.async { [weak self, weak model] in
             guard let self, let model else { return }
@@ -186,9 +190,10 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
             return
         }
         guard let model = models[ObjectIdentifier(keyWindow)] else { return }
-        // A reader window holds a single reply; closing its tab would leave an
-        // empty window, so close the window (the unsaved-changes guard still runs).
-        if model.isReaderWindow, model.tabs.count <= 1 {
+        // With no document tab left there is nothing to close inside the window,
+        // so Cmd-W closes the window. A reader window holds a single reply, so its
+        // last tab closes the window too. performClose runs the unsaved-changes guard.
+        if model.tabs.isEmpty || (model.isReaderWindow && model.tabs.count <= 1) {
             keyWindow.performClose(nil)
             return
         }
@@ -300,6 +305,12 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
             return isDirectory(url)
         }
 
+        // Nothing to restore: fall back to the default workspace folders.
+        if initialModel.rootURL == nil, validPaths.isEmpty {
+            openDefaultWorkspaces(anchoredAt: initialModel)
+            return
+        }
+
         for path in validPaths where path != initialRootPath {
             openWorkspace(URL(fileURLWithPath: path))
         }
@@ -312,6 +323,32 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
             initialModelWindow()?.makeKeyAndOrderFront(nil)
         }
 
+        persistWorkspaceLayout()
+    }
+
+    /// Opens the existing default workspace folders, the first in the initial
+    /// window and the rest as native tabs, in list order. The home folder is the
+    /// last resort when the list is empty or none of its folders exist.
+    private func openDefaultWorkspaces(anchoredAt initialModel: AppModel) {
+        let folders = session.defaultWorkspaceFolderPaths
+            .map(URL.init(fileURLWithPath:))
+            .filter { isDirectory($0) }
+
+        guard let first = folders.first else {
+            if initialModel.rootURL == nil {
+                initialModel.openRoot(FileManager.default.homeDirectoryForCurrentUser)
+            }
+            persistWorkspaceLayout()
+            return
+        }
+
+        for folder in folders {
+            openWorkspace(folder, from: initialModel)
+        }
+        if let firstWindow = window(for: first) {
+            firstWindow.tabGroup?.selectedWindow = firstWindow
+            firstWindow.makeKeyAndOrderFront(nil)
+        }
         persistWorkspaceLayout()
     }
 

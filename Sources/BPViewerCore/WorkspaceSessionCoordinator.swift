@@ -61,6 +61,36 @@ public final class WorkspaceSessionCoordinator {
         )
     }
 
+    /// File kinds shown by "Show selected files only"; unknown stored values are ignored.
+    public var selectedFileKinds: Set<DocumentKind> {
+        Set(state.global.selectedFileKinds.compactMap(DocumentKind.init(rawValue:)))
+            .intersection(DocumentKind.selectableKinds)
+    }
+
+    /// Stores the kinds in their canonical order, so equal sets always persist the same way.
+    public func setSelectedFileKinds(_ kinds: Set<DocumentKind>) {
+        let stored = DocumentKind.selectableKinds.filter(kinds.contains).map(\.rawValue)
+        updateGlobal { $0.selectedFileKinds = stored }
+    }
+
+    /// Standardized folder paths opened when the previous session cannot be restored, in order.
+    public var defaultWorkspaceFolderPaths: [String] {
+        state.global.defaultWorkspaceFolders
+    }
+
+    public func addDefaultWorkspaceFolder(_ rootURL: URL) {
+        let path = workspaceKey(for: rootURL)
+        updateGlobal { global in
+            global.defaultWorkspaceFolders = DefaultWorkspaceFolders.adding(path, to: global.defaultWorkspaceFolders)
+        }
+    }
+
+    public func removeDefaultWorkspaceFolder(path: String) {
+        updateGlobal { global in
+            global.defaultWorkspaceFolders = DefaultWorkspaceFolders.removing(path, from: global.defaultWorkspaceFolders)
+        }
+    }
+
     public var lastWorkspacePath: String? {
         state.lastWorkspacePath
     }
@@ -147,7 +177,7 @@ public final class WorkspaceSessionCoordinator {
         activeTabID: String?,
         expandedPaths: Set<String>,
         treeScrollOffset: Double,
-        compatibleOnly: Bool,
+        showSelectedFilesOnly: Bool,
         showHiddenFiles: Bool,
         configuration: WorkspaceSessionConfiguration
     ) {
@@ -170,7 +200,7 @@ public final class WorkspaceSessionCoordinator {
         workspace.activeTabPath = persistedTabs.first(where: { $0.id == activeTabID })?.url.standardizedFileURL.path
         workspace.expandedPaths = expandedPaths.sorted()
         workspace.treeScrollOffset = treeScrollOffset
-        workspace.compatibleOnly = compatibleOnly
+        workspace.showSelectedFilesOnly = showSelectedFilesOnly
         workspace.showHiddenFiles = showHiddenFiles
         workspace.tabContexts = persistedTabs.reduce(into: [String: String]()) { result, tab in
             guard tab.kind == .latex, let contextURL = tab.contextURL else { return }

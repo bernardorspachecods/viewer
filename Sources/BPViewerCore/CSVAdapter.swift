@@ -170,6 +170,15 @@ public struct CSVPreviewAdapter: Sendable {
               </div>
             </div>
             <script>
+            \(Self.gridScript)
+            </script>
+          </body>
+        </html>
+        """
+    }
+
+    /// Grid behavior for the CSV preview: selection, keyboard movement, and cell editing.
+    private static let gridScript = """
               (() => {
                 const table = document.querySelector('[data-bp-csv]');
                 if (!table) return;
@@ -343,11 +352,7 @@ public struct CSVPreviewAdapter: Sendable {
                   moveTo(row, column);
                 });
               })();
-            </script>
-          </body>
-        </html>
         """
-    }
 
     private func spreadsheetColumnLabel(for index: Int) -> String {
         var value = index + 1
