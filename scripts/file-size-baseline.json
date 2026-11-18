@@ -1,0 +1,20 @@
+{
+  "Sources/BPViewerApp/CodexReplyCaptureController.swift": 504,
+  "Sources/BPViewerApp/DocxPreviewView.swift": 544,
+  "Sources/BPViewerApp/MarkdownWebPreview.swift": 637,
+  "Sources/BPViewerApp/PDFPreviewView.swift": 570,
+  "Sources/BPViewerApp/RootView.swift": 551,
+  "Sources/BPViewerApp/SnapshotSupport.swift": 602,
+  "Sources/BPViewerApp/SourceEditorView.swift": 1835,
+  "Sources/BPViewerApp/WorkspaceTreeSession.swift": 701,
+  "Sources/BPViewerApp/WorkspaceView.swift": 960,
+  "Sources/BPViewerContractRunner/main.swift": 587,
+  "Sources/BPViewerCore/DocumentDiff.swift": 504,
+  "Sources/BPViewerCore/LatexAdapter.swift": 1083,
+  "Sources/BPViewerCore/MarkdownAdapter.swift": 685,
+  "Sources/BPViewerCore/MarkdownEditing.swift": 798,
+  "Sources/BPViewerCore/MarkdownSyntaxHighlighter.swift": 507,
+  "Sources/BPViewerCore/SessionModels.swift": 566,
+  "Sources/BPViewerFoundationRunner/main.swift": 899,
+  "Tests/BPViewerAppTests/MarkdownAdapterTests.swift": 2270
+}
