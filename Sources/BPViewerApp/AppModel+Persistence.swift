@@ -23,6 +23,7 @@ extension AppModel {
             tabs: tabs,
             activeTabID: activeTabID,
             expandedPaths: expandedPaths,
+            isRootCollapsed: isRootCollapsed,
             treeScrollOffset: treeScrollOffset,
             showSelectedFilesOnly: showSelectedFilesOnly,
             showHiddenFiles: showHiddenFiles,
@@ -45,7 +46,8 @@ extension AppModel {
             showSelectedFilesOnly: savedWorkspace.showSelectedFilesOnly,
             selectedFileKinds: selectedFileKinds,
             showHiddenFiles: savedWorkspace.showHiddenFiles,
-            automaticSingleChildExpansion: !workspaceSession.hasWorkspaceState(for: rootURL)
+            automaticSingleChildExpansion: !workspaceSession.hasWorkspaceState(for: rootURL),
+            isRootCollapsed: savedWorkspace.isRootCollapsed
         )
         let available = savedWorkspace.tabPaths
             .map(URL.init(fileURLWithPath:))

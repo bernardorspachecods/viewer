@@ -38,6 +38,8 @@ final class AppModel: ObservableObject {
     @Published var selectedFileKinds: Set<DocumentKind>
     @Published var showHiddenFiles = false
     @Published var expandedPaths: Set<String> = []
+    /// The workspace root's listing is hidden, mirrored from the tree session.
+    @Published var isRootCollapsed = false
     @Published var treeRevealTargetID: String?
     @Published var treeScrollOffset: Double = 0
     @Published var sidebarVisible = true

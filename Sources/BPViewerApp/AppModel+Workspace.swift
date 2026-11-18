@@ -125,8 +125,8 @@ extension AppModel {
         persistState()
     }
 
-    func collapseAllFolders() {
-        workspaceTreeSession.collapseAllFolders()
+    func pressRootCollapseButton() {
+        workspaceTreeSession.pressRootButton()
         persistState()
     }
 

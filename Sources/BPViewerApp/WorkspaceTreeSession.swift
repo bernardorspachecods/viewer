@@ -12,6 +12,7 @@ final class WorkspaceTreeSession {
     struct State: Equatable {
         var nodes: [FileNode] = []
         var expandedPaths: Set<String> = []
+        var isRootCollapsed = false
         var treeScrollOffset = 0.0
         var showSelectedFilesOnly = true
         var selectedFileKinds = Set(DocumentKind.selectableKinds)
@@ -60,6 +61,7 @@ final class WorkspaceTreeSession {
         automaticSingleChildExpansionBasePath = nil
         state.nodes = []
         state.expandedPaths = []
+        state.isRootCollapsed = false
         state.treeScrollOffset = 0
         state.isScanning = false
         state.isFiltering = false
@@ -77,9 +79,11 @@ final class WorkspaceTreeSession {
         showSelectedFilesOnly: Bool,
         selectedFileKinds: Set<DocumentKind>,
         showHiddenFiles: Bool,
-        automaticSingleChildExpansion: Bool
+        automaticSingleChildExpansion: Bool,
+        isRootCollapsed: Bool = false
     ) {
         state.expandedPaths = expandedPaths
+        state.isRootCollapsed = isRootCollapsed
         state.treeScrollOffset = max(treeScrollOffset, 0)
         state.showSelectedFilesOnly = showSelectedFilesOnly
         state.selectedFileKinds = selectedFileKinds
@@ -291,6 +295,8 @@ final class WorkspaceTreeSession {
 
         automaticSingleChildExpansionPending = false
         automaticSingleChildExpansionBasePath = nil
+        // A revealed file must sit inside a visible listing.
+        state.isRootCollapsed = false
 
         var ancestorPath = ""
         for component in components.dropLast() {
@@ -309,6 +315,24 @@ final class WorkspaceTreeSession {
         automaticSingleChildExpansionPending = false
         automaticSingleChildExpansionBasePath = nil
         childLoadGenerations.removeAll()
+        emitState()
+    }
+
+    /// One press of the workspace root's header button. See `FolderCollapseRules`.
+    func pressRootButton() {
+        let step = FolderCollapseRules.rootStep(
+            isRootCollapsed: state.isRootCollapsed,
+            expandedPaths: state.expandedPaths
+        )
+        state.expandedPaths = FolderCollapseRules.expandedPaths(afterRoot: step, expandedPaths: state.expandedPaths)
+        state.isRootCollapsed = FolderCollapseRules.isRootCollapsed(after: step)
+        automaticSingleChildExpansionPending = false
+        automaticSingleChildExpansionBasePath = nil
+        // Showing or hiding the root keeps open folders' loads valid; only
+        // closing the subfolders removes every expansion.
+        if step != .expandRoot {
+            childLoadGenerations.removeAll()
+        }
         emitState()
     }
 

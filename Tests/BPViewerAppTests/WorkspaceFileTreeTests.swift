@@ -257,11 +257,16 @@ func clearsFolderExpansionRecords() {
     session.restore(
         expandedPaths: ["chapters", "chapters/part-one", "assets"],
         treeScrollOffset: 0,
-        compatibleOnly: true,
+        showSelectedFilesOnly: true,
+        selectedFileKinds: Set(DocumentKind.selectableKinds),
         showHiddenFiles: false,
         automaticSingleChildExpansion: true
     )
 
+    // Two-step press (docs/behavior/file-tree.md): the first press closes the open
+    // subfolder and keeps "chapters" open; the second closes "chapters" itself.
+    session.collapseFolder("chapters")
+    #expect(session.snapshot.expandedPaths == ["chapters", "assets"])
     session.collapseFolder("chapters")
     #expect(session.snapshot.expandedPaths == ["assets"])
 

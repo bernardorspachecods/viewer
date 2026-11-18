@@ -22,7 +22,8 @@ tags: [behavior, settings, persistence]
 
 - Open workspaces, their order, and the active workspace.
 - Per workspace: document tabs, the active tab, LaTeX root selection and context,
-  the tree filter, expansion, and the show-selected-files toggle.
+  the tree filter, expansion, whether the workspace root's listing is hidden, and
+  the show-selected-files toggle.
 - Per document: zoom, outline width and visibility, and reading position.
 - Global: theme, sidebar width and visibility, default zoom levels, `shell escape`,
   default workspace folders, and selected file types.

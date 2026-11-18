@@ -60,4 +60,48 @@ public enum FolderCollapseRules {
         case .collapseFolder: "Close folder"
         }
     }
+
+    /// The workspace root's header button. The root has no expansion entry;
+    /// its listing is hidden by a separate flag.
+    public enum RootStep: Equatable, Sendable {
+        case expandRoot
+        case collapseSubfolders
+        case collapseRoot
+    }
+
+    /// A hidden root listing is shown first. With the listing shown, open
+    /// folders are closed first, and the root listing is hidden last.
+    public static func rootStep(isRootCollapsed: Bool, expandedPaths: Set<String>) -> RootStep {
+        if isRootCollapsed { return .expandRoot }
+        return expandedPaths.isEmpty ? .collapseRoot : .collapseSubfolders
+    }
+
+    /// Whether the root listing is hidden after `step`.
+    public static func isRootCollapsed(after step: RootStep) -> Bool {
+        step == .collapseRoot
+    }
+
+    /// Expansion records after a root step. Every expanded folder lies inside
+    /// the root, so closing the subfolders clears them all.
+    public static func expandedPaths(afterRoot step: RootStep, expandedPaths: Set<String>) -> Set<String> {
+        step == .collapseSubfolders ? [] : expandedPaths
+    }
+
+    /// The root button is shown while the listing is hidden, and while the
+    /// listing is shown and has something to close or hide.
+    public static func showsRootButton(
+        isRootCollapsed: Bool,
+        expandedPaths: Set<String>,
+        hasSubfolders: Bool
+    ) -> Bool {
+        isRootCollapsed || !expandedPaths.isEmpty || hasSubfolders
+    }
+
+    public static func helpText(forRoot step: RootStep) -> String {
+        switch step {
+        case .expandRoot: "Show files"
+        case .collapseSubfolders: "Close all folders"
+        case .collapseRoot: "Hide files"
+        }
+    }
 }

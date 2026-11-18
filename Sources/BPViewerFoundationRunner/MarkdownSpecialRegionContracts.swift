@@ -42,7 +42,9 @@ extension Runner {
             baseURL: URL(fileURLWithPath: "/tmp/project")
         )
         expect(
-            inlineMath?.html.contains("class=\"math-inline bp-special-placeholder\"") == true
+            // Inline formulas render as MathML inside a `math-inline` span, not as the
+            // dashed placeholder box that raw HTML and front matter use.
+            inlineMath?.html.contains("class=\"math-inline\"") == true
                 && inlineMath?.html.contains("data-bp-special-kind=\"math\"") == true,
             "inline formulas expose a specialized editing hook"
         )

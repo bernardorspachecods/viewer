@@ -1,22 +1,6 @@
 import BPViewerCore
 import SwiftUI
 
-struct CollapseFoldersButton: View {
-    let helpText: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: "chevron.up")
-                .frame(width: 22, height: 22)
-                .iconButtonHitArea()
-        }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .help(helpText)
-    }
-}
-
 struct SidebarTreeItem: Identifiable {
     let id: String
     let node: FileNode?
@@ -37,7 +21,8 @@ struct SidebarTreeItem: Identifiable {
     static func flatten(
         nodes: [FileNode],
         expandedPaths: Set<String>,
-        loadingPaths: Set<String> = []
+        loadingPaths: Set<String> = [],
+        isRootCollapsed: Bool = false
     ) -> [SidebarTreeItem] {
         var result: [SidebarTreeItem] = []
 
@@ -55,7 +40,9 @@ struct SidebarTreeItem: Identifiable {
             }
         }
 
-        append(nodes, level: 0)
+        if !isRootCollapsed {
+            append(nodes, level: 0)
+        }
         return result
     }
 }
@@ -112,12 +99,13 @@ struct SidebarView: View {
                 .accessibilityLabel("Refresh files")
 
                 CollapseFoldersButton(
-                    helpText: "Close all folders",
-                    action: model.collapseAllFolders
+                    systemName: rootStep == .expandRoot ? "chevron.down" : "chevron.up",
+                    helpText: FolderCollapseRules.helpText(forRoot: rootStep),
+                    action: model.pressRootCollapseButton
                 )
-                .opacity(model.expandedPaths.isEmpty ? 0 : 1)
-                .allowsHitTesting(!model.expandedPaths.isEmpty)
-                .accessibilityHidden(model.expandedPaths.isEmpty)
+                .opacity(showsRootButton ? 1 : 0)
+                .allowsHitTesting(showsRootButton)
+                .accessibilityHidden(!showsRootButton)
                 if model.isPerformingFileOperation {
                     ProgressView()
                         .controlSize(.small)
@@ -164,7 +152,8 @@ struct SidebarView: View {
                                     SidebarTreeItem.flatten(
                                         nodes: model.nodes,
                                         expandedPaths: model.expandedPaths,
-                                        loadingPaths: loadingPaths
+                                        loadingPaths: loadingPaths,
+                                        isRootCollapsed: model.isRootCollapsed
                                     )
                                 ) { item in
                                     if let node = item.node {
@@ -262,7 +251,8 @@ struct SidebarView: View {
         guard let targetID = model.treeRevealTargetID else { return }
         let visibleIDs = SidebarTreeItem.flatten(
             nodes: model.nodes,
-            expandedPaths: model.expandedPaths
+            expandedPaths: model.expandedPaths,
+            isRootCollapsed: model.isRootCollapsed
         ).map(\.id)
         guard visibleIDs.contains(targetID) else { return }
 
@@ -276,6 +266,21 @@ struct SidebarView: View {
                 }
             }
         }
+    }
+
+    private var rootStep: FolderCollapseRules.RootStep {
+        FolderCollapseRules.rootStep(
+            isRootCollapsed: model.isRootCollapsed,
+            expandedPaths: model.expandedPaths
+        )
+    }
+
+    private var showsRootButton: Bool {
+        FolderCollapseRules.showsRootButton(
+            isRootCollapsed: model.isRootCollapsed,
+            expandedPaths: model.expandedPaths,
+            hasSubfolders: FolderCollapseRules.hasSubfolders(model.nodes)
+        )
     }
 
     private var activeHighlightedNodeIDs: Set<String> {
@@ -425,7 +430,7 @@ struct FolderCollapseSlot: View {
     @State private var isHovering = false
 
     var body: some View {
-        CollapseFoldersButton(helpText: helpText, action: action)
+        CollapseFoldersButton(systemName: "chevron.up", helpText: helpText, action: action)
             .opacity(isHovering ? 1 : 0)
             .onHover { isHovering = $0 }
     }

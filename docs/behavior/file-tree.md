@@ -31,8 +31,14 @@ tags: [behavior, sidebar, file-tree]
 
 ## Collapsing
 
-- The sidebar header's chevron collapses all folders and clears their expansion
-  records. Nothing is kept open.
+- The workspace root has a chevron in the sidebar header. It hides or shows the
+  whole listing under the root. A press takes one step:
+  - If the listing is hidden, the press shows it again (chevron down).
+  - If the listing is shown and a folder inside it is open, the press closes every
+    open folder and keeps the listing shown.
+  - Otherwise the press hides the listing, and the chevron then points down.
+- The root button is shown while the listing is hidden, and while the listing has
+  subfolders. Revealing a file in the sidebar shows the listing first.
 - A folder with at least one subfolder has a collapse button while it is open.
   The button is hidden until the pointer is over the button itself, not the whole
   row. A press takes one step:

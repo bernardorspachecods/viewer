@@ -23,6 +23,7 @@ extension AppModel {
     func applyWorkspaceTreeState(_ state: WorkspaceTreeSession.State) {
         nodes = state.nodes
         expandedPaths = state.expandedPaths
+        isRootCollapsed = state.isRootCollapsed
         treeScrollOffset = state.treeScrollOffset
         showSelectedFilesOnly = state.showSelectedFilesOnly
         showHiddenFiles = state.showHiddenFiles

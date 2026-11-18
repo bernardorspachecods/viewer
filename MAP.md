@@ -28,6 +28,7 @@ Structural rules for code and documents are in [AGENTS.md](/AGENTS.md). How to d
 | Agent rules for this repository: structural rules for code and documents, and the `scripts/restart-app.sh` step that ends a work round changing app use. | [AGENTS.md](/AGENTS.md) |
 | Manual validation fixtures for Markdown, link, and LaTeX previews: small input files, a local SVG, and a LaTeX project; these corpora contain no personal documents. | [MAP.md](/Fixtures/MAP.md) |
 | Swift targets of the Viewer package: the shared core, macOS app, executable contract runners, and isolated tab prototypes; runners and prototypes exercise core seams rather than copy app logic. | [MAP.md](/Sources/MAP.md) |
+| What remains open after the 2026-11-18 work round: decisions the owner must make, behavior that needs a live check, and known gaps in tests and cleanup. | [backlog.md](/backlog.md) |
 | Current Viewer documentation: user-visible app behavior (one document per area) and technical architecture (one document per concern). | [MAP.md](/docs/MAP.md) |
 | Procedures specific to the Viewer repository for agents: how to decide what a document holds. | [MAP.md](/repo-library/MAP.md) |
 <!-- BKF:GENERATED-MEMBER-INVENTORY:END -->
@@ -39,6 +40,7 @@ Structural rules for code and documents are in [AGENTS.md](/AGENTS.md). How to d
 - [dev-run.sh](/scripts/dev-run.sh) rebuilds and restarts the app when `Sources/` changes.
 - [build-app.sh](/scripts/build-app.sh) builds the local `.app` bundle and copies required resources.
 - [check-file-size.sh](/scripts/check-file-size.sh) enforces the 500-line limit on Swift files in `Sources/` and `Tests/`; over-limit files are pinned in `scripts/file-size-baseline.json`, and a pin can only go down (`--update` lowers it).
+- [check.sh](/scripts/check.sh) runs every check that works on this machine (build, both runners, size limits, `bkf validate`, `swift test`) and stops at the first failure.
 - [check-function-size.sh](/scripts/check-function-size.sh) enforces the 150-line limit on Swift function, method, init, and computed property bodies in `Sources/` and `Tests/`; over-limit functions are pinned by file and name in `scripts/function-size-baseline.json`, and a pin can only go down (`--update` lowers it).
 - [install-app.sh](/scripts/install-app.sh) builds the release app and installs it in `/Applications` or `BP_VIEWER_INSTALL_DIR`.
 - [BPViewer-Info.plist](/Resources/BPViewer-Info.plist) supplies macOS app bundle metadata.

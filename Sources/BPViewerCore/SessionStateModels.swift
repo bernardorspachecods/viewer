@@ -142,6 +142,9 @@ public struct WorkspaceState: Codable, Sendable {
     public var activeTabPath: String?
     public var tabContexts: [String: String] = [:]
     public var expandedPaths: [String] = []
+    /// The workspace root's listing is hidden. Absent in older state, which
+    /// therefore opens with the root shown.
+    public var isRootCollapsed = false
     public var treeScrollOffset = 0.0
     /// Persisted under the original `compatibleOnly` key, so older state still loads.
     public var showSelectedFilesOnly = true
@@ -152,7 +155,9 @@ public struct WorkspaceState: Codable, Sendable {
     public var snapshots: [SnapshotRecord] = []
 
     private enum CodingKeys: String, CodingKey {
-        case tabPaths, activeTabPath, tabContexts, expandedPaths, treeScrollOffset
+        case tabPaths, activeTabPath, tabContexts, expandedPaths
+        case isRootCollapsed = "rootCollapsed"
+        case treeScrollOffset
         case showSelectedFilesOnly = "compatibleOnly"
         case showHiddenFiles, latexRootSelections, latexExternalGrants, securityScopedBookmark, snapshots
     }
@@ -165,6 +170,7 @@ public struct WorkspaceState: Codable, Sendable {
         activeTabPath = try container.decodeIfPresent(String.self, forKey: .activeTabPath)
         tabContexts = try container.decodeIfPresent([String: String].self, forKey: .tabContexts) ?? [:]
         expandedPaths = try container.decodeIfPresent([String].self, forKey: .expandedPaths) ?? []
+        isRootCollapsed = try container.decodeIfPresent(Bool.self, forKey: .isRootCollapsed) ?? false
         treeScrollOffset = try container.decodeIfPresent(Double.self, forKey: .treeScrollOffset) ?? 0
         showSelectedFilesOnly = try container.decodeIfPresent(Bool.self, forKey: .showSelectedFilesOnly) ?? true
         showHiddenFiles = try container.decodeIfPresent(Bool.self, forKey: .showHiddenFiles) ?? false

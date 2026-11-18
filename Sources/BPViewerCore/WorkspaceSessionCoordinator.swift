@@ -176,6 +176,7 @@ public final class WorkspaceSessionCoordinator {
         tabs: [DocumentTab],
         activeTabID: String?,
         expandedPaths: Set<String>,
+        isRootCollapsed: Bool,
         treeScrollOffset: Double,
         showSelectedFilesOnly: Bool,
         showHiddenFiles: Bool,
@@ -199,6 +200,7 @@ public final class WorkspaceSessionCoordinator {
         workspace.tabPaths = persistedTabs.map { $0.url.standardizedFileURL.path }
         workspace.activeTabPath = persistedTabs.first(where: { $0.id == activeTabID })?.url.standardizedFileURL.path
         workspace.expandedPaths = expandedPaths.sorted()
+        workspace.isRootCollapsed = isRootCollapsed
         workspace.treeScrollOffset = treeScrollOffset
         workspace.showSelectedFilesOnly = showSelectedFilesOnly
         workspace.showHiddenFiles = showHiddenFiles
