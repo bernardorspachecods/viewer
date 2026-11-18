@@ -23,7 +23,7 @@ document close at hand.
 - Follow supported links between files and search within the active document.
 
 Viewer can capture completed Codex or Claude Code replies from supported
-terminal apps; see [the current app behavior](docs/current-state.md#tabs-preferences-and-snapshots).
+terminal apps; see [reply capture and snapshots](docs/behavior/reply-capture-and-snapshots.md).
 
 ## Run Viewer from source
 

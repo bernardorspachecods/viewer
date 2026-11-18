@@ -1,179 +1,58 @@
 ---
 bkf: document
-description: "Current UI architecture: window composition, the state `AppModel` publishes, and what each document surface presents; module and rendering boundaries are in `architecture.md`."
+description: "UI architecture of the macOS app: window composition, which layer presents overlays and snapshots, how the sidebar is rendered, and how the document surfaces are coupled to the models."
 tags: [architecture, ui]
 ---
 
-# Current UI architecture
+# UI architecture
+
+Behavior that users see is in the behavior documents routed from
+[the documentation map](/docs/MAP.md). This document covers the structure
+that produces it. Module boundaries and coordination are in
+[architecture.md](/docs/technical/architecture.md).
 
 ## Window composition
 
-```text
-RootView
-└── WorkspaceView
-    ├── Topbar
-    ├── SidebarView
-    │   ├── folder header
-    │   ├── search and filter
-    │   └── file tree
-    ├── tab bar
-    └── document surface
-        ├── MarkdownPreviewView
-        ├── JSONPreviewView
-        ├── CSVPreviewView
-        ├── LatexPreviewView
-        ├── PDFPreviewView
-        ├── ImagePreviewView
-        └── DocxPreviewView
-```
+- Each workspace window has one header bar spanning the window, above the sidebar
+  column and the document column. The header is a single row and never wraps.
+  Its content rules are in [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
+- The document column holds the tab bar and one surface per document kind. Preview
+  and editor views are chosen by document kind; the views live in `Sources/BPViewerApp/`.
+- Overlays (outline, diff, settings, errors, root selection, permissions, and
+  workspace switching) are presented by the app layer, not by the preview views.
+- Snapshots use a separate AppKit window.
+- Reader windows omit the sidebar toggle, the folder button, and the workspace
+  identity. Their rules are in [reply-capture-and-snapshots.md](/docs/behavior/reply-capture-and-snapshots.md).
 
-`DocumentOutlineView`, `DocumentDiffView`, `SettingsView`, and the error,
-root selection, permission, and workspace-switch overlays are presented by the
-app layer. Snapshots use a separate AppKit window.
+## State
 
-## UI state
+- `WorkspaceWindowManager` creates the windows as native tabs, restores their order,
+  and routes global commands to the active window.
+- `AppModel` is the observable object for one workspace. It publishes the state the
+  surfaces render; the published properties are in `Sources/BPViewerApp/AppModel.swift`.
+- Render, edit, and diff requests go to their coordinators. The results come back as
+  events that `AppModel` applies.
+- Settings changes also go through `AppModel`.
 
-`WorkspaceWindowManager` manages native macOS tabs and keeps an `AppModel` for
-each workspace window/tab. `AppModel` is the main `ObservableObject` for each
-workspace and publishes its root, tree, tabs, active tab, search, search target,
-filter, expansion, sidebar, zoom, theme, search state, LaTeX selection requests,
-and snapshot capture. Tab sessions, persistence, and document resolution live
-in Core; `WorkspaceTreeSession` maintains the tree. Render, edit, and diff
-baseline requests are handled by `DocumentRenderCoordinator`,
-`DocumentEditCoordinator`, and `DocumentDiffCoordinator`, respectively; they
-return events or values that `AppModel` applies.
+## Sidebar
 
-`CodexReplyCaptureController` coordinates reply capture; the user-visible
-shortcuts and capture behavior are described in [current app state](/docs/current-state.md#tabs-preferences-and-snapshots).
+- Expanded branches are flattened into a list of visible rows before `LazyVStack`
+  renders them. Scrolling never builds one recursive view holding every descendant.
+- Tree rows have no drag and drop, and per-row hover is limited to expanded
+  top-level folders. The reason is in [file-tree.md](/docs/behavior/file-tree.md).
 
-The main models are:
+## Surfaces and coupling
 
-- `DocumentTab` — file identity, type, context, preview state, current artifact,
-  outline, zoom, reading position, dependencies, and error.
-- `SourceEditSession` — source/split mode, base and current source, saving,
-  undo/redo history, and external conflicts.
-- `DocumentDiff` — reusable, format-independent result with lines/hunks, line
-  numbers, and selected reference.
-- `AppState`, `WorkspaceState`, and `DocumentState` — state persisted in Core;
-  `WorkspaceSessionCoordinator` manages reads and writes.
-- `PreviewStatus` — `idle`, `updating`, `ready`, `stale`, `failed`,
-  `unavailable`, `cancelled`, and `timeout`.
-
-## Surfaces
-
-### Sidebar
-
-`SidebarView` displays the open root, search, compatibility filter, indexing
-state, and lazy tree. Selecting a file asks `AppModel` to open or focus the
-corresponding tab.
-
-Expanded branches are flattened into visible rows before they are passed to
-`LazyVStack`, so scrolling does not need to build a recursive view containing
-all descendants.
-
-The header collapses all folders; on each first-level folder, the same command
-appears on hover and clears only that folder's branch.
-
-The context menu uses `WorkspaceFileOperations` to rename folders/files,
-duplicate items, and move items to the Trash while keeping open tabs synced with
-their new paths. Tree rows deliberately have no `draggable` or
-`dropDestination`: per-row drag support created platform views that made
-scrolling slow with hidden files shown. Per-row hover is also limited to
-expanded top-level folders for the same reason.
-
-### Tabs
-
-The tab bar shows the file name and context, preview state, and close actions.
-The `+` button creates a transient in-memory Markdown tab; the file location is
-chosen only in the save panel. `DocumentTabSession` in Core maintains ordering,
-uniqueness, and the active tab. Transient tabs are not included in workspace
-persistence.
-
-### Markdown
-
-`MarkdownPreviewView` composes the HTML, search, outline, zoom, rendering state,
-and errors. The shared search bar lives on the tab surface and follows focus
-between the source editor and preview in split view. `MarkdownWebPreview`
-contains the `WKWebView`, JavaScript, navigation, and reading position.
-`SourceEditorView` contains the AppKit editor shared by Markdown and JSON.
-Each committed Quick Edit change reaches `AppModel` as an `inlineChange`
-event and is applied to the source by `MarkdownInlineTextEdit` in Core. The
-`Raw Markdown` toolbar button switches between Quick Edit and the
-source editor, whose syntax highlighting uses a palette for light and dark
-themes. The toolbar switches between the full editor and split view, which keeps
-the source on the left and live preview on the right. The outline is resizable
-per file and restores that document's saved width.
-
-The toolbar opens `DocumentDiffView`, which keeps the read-only reference on the
-left and the actual editor on the right. It can compare against disk or `HEAD`;
-when closed, it restores the previous mode. Both editors share vertical
-scrolling and use the same per-line height map to keep corresponding lines
-aligned as either column scrolls.
-
-### PDF
-
-`PDFPreviewView` displays local PDFs and LaTeX artifacts in `PDFView`, and
-controls zoom, search, outline, reading position, printing, and link navigation.
-The shared search routes operations to PDFKit.
-
-### Images
-
-`ImagePreviewView` displays PNG, JPG/JPEG, WebP, and HEIC/HEIF in a read-only
-canvas with a card, border, and shadow; automatic fit-to-window; scrolling for
-enlarged images; shared tab zoom; refresh; and snapshot capture. Changes to the
-active file trigger a new read through `DocumentRenderCoordinator`.
-
-### LaTeX
-
-`LatexPreviewView` composes the editing toolbar, `NSTextView` editor, diff, and
-`PDFPreviewView` in split view. `LatexSyncTeXLookup` resolves PDF coordinates
-to source locations. When
-SyncTeX returns a line from the generated `.bbl`, `AppModel` uses the saved `.bbl`
-contents to find the entry key and open the `.bib` file.
-
-`SourceEditorView` applies the `LatexSyntaxColorPalette`. The PDF routes local
-links to the `AppModel` router and external links to the browser.
-
-### JSON
-
-`JSONPreviewView` displays validated JSON in a selectable, monospaced,
-read-only raw surface. It preserves source lines exactly, including empty ones,
-and provides line numbers, zoom, and snapshot capture. Double-clicking switches
-to a monospaced raw editor with undo/redo, explicit saving for valid JSON only,
-validation before saving, and external conflict resolution; there is no split
-view. Preview and editor use the same search bar, with focus determining the
-search target. Diff uses the same `DocumentDiffView` as Markdown; the shared
-AppKit editor provides the line gutter and Git-like decorations on the right.
-Invalid JSON on exit opens a confirmation to continue editing or discard.
-
-### CSV
-
-`CSVPreviewView` displays data in a selectable HTML table with a header, row
-numbers, horizontal scrolling, zoom, search, and snapshot capture. Double-click
-edits existing cells; `Enter` confirms, `Esc` cancels or confirms the cell in
-the draft, and `Save` or `⌘S` saves the file. `Undo`/`Redo` and `⌘Z`/`⇧⌘Z` work
-on the draft without saving. Rows and columns cannot be created or removed.
-
-### Word
-
-`DocxPreviewView` converts rich `.docx` content to local HTML and displays it in
-a `WKWebView` with a canvas, white page, and magnification linked to the app's
-zoom. Shared search routes queries to WebKit.
-
-### Visual system and preferences
-
-`DesignSystem.swift` contains tokens, toolbar buttons, badges, empty states, and
-reusable controls. `SettingsView` changes the theme, default zoom levels, and
-`shell escape` mode through `AppModel`.
-
-## Window-level interactions
-
-`RootView` routes commands to open a folder, refresh the preview, toggle the
-theme/sidebar, show search, control zoom, select tabs, and capture snapshots.
-`WorkspaceWindowManager` creates and groups windows as native tabs, restores
-workspace order, and routes global commands to the active window. `AppModel` also
-handles opening from Finder, drag and drop, document shortcuts, and confirmation
-when closing a native tab with changes.
-
-Views do not run scanners, compilers, or persistence directly; they send actions
-to `AppModel` and render the state it publishes.
+- Markdown: Quick Edit changes are sent to `AppModel` and applied to the Markdown
+  source in Core, not in the view. The shared search bar sits on the tab surface and
+  follows focus between editor and preview in split view.
+- Raw editing and diff: Markdown source, JSON, and the diff use one shared AppKit
+  editor, which draws the line gutter and the Git-style decorations. The diff uses
+  one view for Markdown and JSON. Both sides use the same per-line height map, so
+  corresponding lines stay aligned while either side scrolls.
+- LaTeX: a PDF double-click is resolved to a source location in the app. A
+  bibliography jump reads the saved `.bbl` file, not the draft.
+- PDF: local links go to the app's router; external links go to the browser.
+- Images and Word: image reads go through the render coordinator (see
+  [rendering.md](/docs/technical/rendering.md)).
+- Reply capture runs in its own controller in the App target.

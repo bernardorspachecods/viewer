@@ -1,168 +1,40 @@
 ---
 bkf: document
-description: "Current technical architecture of the Swift code: module boundaries, coordinators, rendering, filesystem updates, persistence, and security controls; it does not describe user-visible behavior or window composition."
+description: "Technical architecture of the Swift code: the boundary between the Core and App targets, who coordinates state, and the rules that keep side effects out of views."
 tags: [architecture, swift]
 ---
 
-# Current technical architecture
+# Technical architecture
 
-## Module organization
+Module contents are listed by the member maps: [Sources/MAP.md](/Sources/MAP.md),
+[BPViewerApp](/Sources/BPViewerApp/MAP.md), and [BPViewerCore](/Sources/BPViewerCore/MAP.md).
+This document holds the rules that span them.
 
-```text
-BPViewerApp
-├── AppModel                  UI intents and session coordination
-├── ActiveDocumentWatcher     active file event adapter
-├── WorkspaceTreeSession      lazy tree, filters, and workspace watchers
-├── DocumentRenderCoordinator rendering and cancellation by tab
-├── DocumentEditCoordinator  document sessions, conflicts, and saving
-├── DocumentDiffCoordinator  disk/Git baselines and diff composition
-├── RootView / WorkspaceView  window composition
-├── WorkspaceWindowManager    native tabs and per-workspace models
-├── SidebarView               workspace tree and navigation
-├── MarkdownPreviewView       preview composition and Markdown editing
-├── MarkdownWebPreview        WebKit, JavaScript, and Markdown navigation bridge
-├── SourceEditorView          AppKit editor, gutter, and decorations shared
-│                             by Markdown, JSON, and diff
-├── JSONPreviewView           numbered raw JSON preview
-├── CSVPreviewView            tabular CSV preview
-├── LatexPreviewView          LaTeX editing and source/PDF split view
-├── LatexSyncTeXLookup        PDF double-click → source
-├── PDFPreviewView            PDF preview and shared PDF surface
-├── ImagePreviewView          native raster image preview
-├── DocxPreviewView           Word preview through HTML/WebKit
-├── SettingsView              app preferences
-└── SnapshotSupport           snapshot selection and windows
+## Core and App boundary
 
-BPViewerCore
-├── FileSystemFoundation      nodes and scanner
-├── SessionModels             pure session and persistence models
-├── DocumentTabSession        tab invariants and transitions
-├── WorkspaceSessionCoordinator workspace persistence and session
-├── DocumentOpenCoordinator   document resolution and LaTeX context
-├── MarkdownAdapter            Markdown → HTML
-├── MarkdownEditing / Merge   Markdown editing and merge
-├── DocumentDiff              pure diff between two text sources
-├── CSVAdapter                 parsing and static HTML for CSV preview
-├── MarkdownPreviewLink       link resolution
-├── MathMLRenderer            TeX mathematics → MathML
-├── LatexRootDiscovery        root discovery
-├── LatexAdapter               LaTeX compilation, overrides, and diagnostics
-├── LatexSyntaxHighlighter     LaTeX source tokens and palette
-├── LatexRenderCache           result cache
-└── LatexTabContextPersistence LaTeX chapter context
-```
-
-`BPViewerApp` contains macOS integration and observable state. `BPViewerCore`
-contains UI-independent logic used by the app and executable runners. The
-`BPViewerContractRunner` and `BPViewerFoundationRunner` targets exercise this
-shared logic.
+- Logic that needs no UI framework belongs in `Sources/BPViewerCore/`. The
+  `Sources/BPViewerApp/` target holds macOS integration and observable state.
+- Core is UI-independent so the executable runners can exercise the same logic the
+  app uses, without a window. See [verification.md](/docs/technical/verification.md).
 
 ## Coordination
 
-`AppModel`, isolated on the `MainActor`, is the effective coordinator for a
-workspace's presentation. `WorkspaceWindowManager` keeps one model instance per
-native tab and shares the persistence coordinator among them. The model
-maintains observable tab state and routes intents to session modules and
-specialized coordinators. `DocumentTabSession` maintains tab invariants;
-`WorkspaceSessionCoordinator` handles persistence and per-workspace state;
-`DocumentOpenCoordinator` resolves URLs and LaTeX context; `ActiveDocumentWatcher`
-adapts Darwin events for the UI. `WorkspaceTreeSession` encapsulates lazy
-scanning, filtering, expansion, and tree watchers; `DocumentRenderCoordinator`
-encapsulates generations, cancellation, and rendering; `DocumentEditCoordinator`
-encapsulates undo/redo, validation, explicit saving, and conflicts;
-`DocumentDiffCoordinator` selects and retrieves baselines without exposing Git
-to the UI. The Core's `DocumentDiffEngine` compares in-memory sources and
-returns a result independent of Markdown or JSON. These modules return values
-and events without directly mutating `AppModel`.
+- `AppModel`, isolated on the main actor, coordinates the presentation of one
+  workspace. `WorkspaceWindowManager` keeps one model per native tab, and the tabs
+  share one persistence coordinator.
+- Specialized coordinators own the sub-workflows: rendering, editing, diff
+  baselines, the tree, and persistence. They return values or events. `AppModel`
+  applies them to its published state, and coordinators do not mutate `AppModel`.
+- Views send intents to `AppModel` and render what it publishes. Views do not scan
+  folders, compile, watch files, or persist state.
+- Git is not exposed to the UI. The diff coordinator selects and retrieves the
+  baselines. Core compares two in-memory texts and returns a result that does not
+  depend on the document format.
 
-The main flow is:
+## Where side effects live
 
-```text
-UI action
-  → AppModel
-    → workspace session / render coordinator / edit coordinator
-        → scanner / watcher / adapter / process runner
-        → DocumentTab and SwiftUI state
-        → Markdown, JSON, CSV, PDF, or Quick Look preview
-```
-
-## Filesystem and updates
-
-- `FileSystemScanner` creates `FileNode` values with absolute and relative paths,
-  a type, and loaded children.
-- The tree starts at the top level and loads children when a folder is expanded.
-  Searching or disabling the compatibility filter may require a full index.
-- Directory watchers update the tree. Watchers for active files and dependencies
-  invalidate the preview. During editing, an external change is reconciled as a
-  conflict; it does not trigger Markdown autosave.
-- Each render uses a generation. Cancelled or obsolete results do not replace
-  the tab's latest state.
-
-## Rendering
-
-`SwiftMarkdownAdapter` uses `swift-markdown` to produce custom HTML. It escapes
-text and attributes, controls URL schemes, embeds local images, collects
-dependencies, and creates an outline and editable blocks.
-
-Local images are embedded as `data:` URLs because WebKit did not reliably load
-relative local resources from the in-memory HTML document used by
-`WKWebView.loadHTMLString`; their filesystem paths remain dependencies for the
-watcher.
-
-`LocalLatexAdapter` resolves the root, prepares a temporary workspace (or an
-overlay when there is a contextual draft), runs the compiler through
-`ProcessRunner`, collects dependencies, validates the generated PDF, and returns
-SyncTeX data when available. The cache is keyed by root, dependencies,
-compiler, and configuration; draft previews are not cached.
-
-Supported images are read as bytes and validated through ImageIO before being
-passed to the native surface. The preview does not alter the original file.
-
-## Persistence and artifacts
-
-- `AppState` is a `Codable` model with a schema version in `SessionModels.swift`.
-- `AppStateStore` stores JSON state in `UserDefaults`; access is encapsulated by
-  `WorkspaceSessionCoordinator`.
-- Global state stores the theme, sidebar, default zoom levels, and `shell escape`.
-- The ordered list of open workspaces and the active workspace are stored in the
-  app state to restore native tabs at launch.
-- Per-document state stores zoom, outline, and reading position.
-- Per-workspace state stores tabs, expansion, scroll, filter, root selection,
-  external permissions, and snapshot records.
-- Transient diff state exists only in the in-memory session; HTML, PDFs, logs,
-  and raw content are not persisted as session state.
-- Snapshot PNG files are stored outside the repository, in Application Support.
-
-## Security boundaries
-
-- Markdown HTML uses a local Content Security Policy and does not enable content
-  scripts.
-- The app does not write build artifacts into the user's source folder.
-- LaTeX dependency paths are resolved and filtered before compilation.
-- Dependencies outside the root require explicit approval and are watched after
-  authorization.
-- `shell escape` is disabled by default and is an explicit app preference.
-
-## Known limits
-
-- Although `ProcessRunner` checks cancellation and sends termination signals,
-  long compilations may still require reliable process cancellation.
-- Draft overlays must handle complex relative paths, `\\input`, `\\include`,
-  `\\graphicspath`, and bibliography correctly.
-- Some engines or distributions may not provide SyncTeX or may produce
-  incomplete maps.
-- Large projects and external dependencies may make live preview expensive.
-- The following areas were recorded as untested at the first foundation-test
-  round and have not been re-verified: SwiftUI rendering and AppKit event
-  delivery; `AppModel` asynchronous tasks, `UserDefaults` isolation, watcher
-  callbacks, and render-generation cancellation; actual `Task` scheduling and
-  generation guards in `AppModel`; permission-denied directories, symlink
-  policy, concurrent renames, and large filesystem performance; and keyboard
-  shortcuts, tab clicks, `WKWebView`, lazy expansion, and external file refresh.
-- The standard `swift test` target was also recorded as unavailable in that
-  environment because the toolchain lacked the Swift `Testing` module; it has
-  not been re-verified.
-- Markdown math coverage is limited to the common renderer surface currently
-  implemented: `frac`, `sqrt`, subscript, superscript, Greek symbols, and basic
-  operators. It does not validate arbitrary LaTeX macros, environments,
-  alignment, labels/references, or custom commands.
+- Scanning and watching: [filesystem-and-watching.md](/docs/technical/filesystem-and-watching.md).
+- Rendering, compilation, and cancellation: [rendering.md](/docs/technical/rendering.md).
+- Storage: [persistence.md](/docs/technical/persistence.md).
+- Window composition and what views render: [ui-architecture.md](/docs/technical/ui-architecture.md).
+- Authorization, Content Security Policy, and external files: [security.md](/docs/technical/security.md).

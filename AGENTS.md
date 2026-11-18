@@ -1,12 +1,21 @@
 ---
 bkf: document
-description: "Agent rules for this repository: the `scripts/restart-app.sh` step that ends a work round changing app use, and nothing beyond it."
+description: "Agent rules for this repository: structural rules for code and documents, and the `scripts/restart-app.sh` step that ends a work round changing app use."
 tags: [agents, workflow]
 ---
 
 [Repository map](/MAP.md)
 
+Document rules in more depth: [documentation](/repo-library/modules/documentacao.md).
+
 # Repository-specific instructions
+
+## Structural rules (all work)
+
+- Swift files stay at most 500 lines and functions at most 150 lines. The file limit is enforced by `scripts/check-file-size.sh` with a baseline (`scripts/file-size-baseline.json`) that can only go down: never raise a pin to pass. The function limit is a rule without a check yet; apply it in review.
+- Anything used in more than one place is defined once. Split files by cohesion, not by count.
+- Every new feature or behavior change that is logic (Core, coordination testable without real windows) ships with a test, so earlier behavior does not break. Exempt for now: SwiftUI and AppKit views and the editor view (`SourceEditorView`). Editing logic in Core (`MarkdownEditing`, merge) is not exempt.
+- Docs keep only what would turn false if the intent changed: rules, reasons, boundaries, known gaps. Each topic has one owner document; the others link to it. Update the owner document in the same change as the behavior.
 
 ## End of a work round that affects app use 
 (doesn’t apply for commits, or documentation changes that dont touch the code)
