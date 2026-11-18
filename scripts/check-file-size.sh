@@ -43,8 +43,9 @@ else
 fi
 
 set +e
-awk -v limit="$LIMIT" -v mode="$MODE" -v out="$next" '
-  FNR == NR { pin[$1] = $2 + 0; pinned[$1] = 1; next }
+awk -v limit="$LIMIT" -v mode="$MODE" -v out="$next" -v pinsfile="$pins" '
+  # Keyed by file name: an empty pins file must not make the sizes file look like pins.
+  FILENAME == pinsfile { pin[$1] = $2 + 0; pinned[$1] = 1; next }
   { size[$1] = $2 + 0; order[++count] = $1 }
   END {
     hard = 0; soft = 0

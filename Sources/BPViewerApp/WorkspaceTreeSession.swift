@@ -312,18 +312,25 @@ final class WorkspaceTreeSession {
         emitState()
     }
 
+    /// One press of a folder's collapse button. See `FolderCollapseRules`.
     func collapseFolder(_ path: String) {
+        let step = FolderCollapseRules.step(for: path, expandedPaths: state.expandedPaths)
+        state.expandedPaths = FolderCollapseRules.expandedPaths(
+            after: step,
+            for: path,
+            expandedPaths: state.expandedPaths
+        )
         let prefix = path + "/"
-        state.expandedPaths = state.expandedPaths.filter {
-            $0 != path && !$0.hasPrefix(prefix)
-        }
         if automaticSingleChildExpansionBasePath == path
             || automaticSingleChildExpansionBasePath?.hasPrefix(prefix) == true {
             automaticSingleChildExpansionPending = false
             automaticSingleChildExpansionBasePath = nil
         }
+        // A folder that stays open keeps its own load generation.
+        let removesFolder = step == .collapseFolder
         childLoadGenerations = childLoadGenerations.filter { key, _ in
-            key != path && !key.hasPrefix(prefix)
+            !FolderCollapseRules.isInside(key, folder: path)
+                && !(removesFolder && key == path)
         }
         emitState()
     }

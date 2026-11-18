@@ -31,8 +31,16 @@ tags: [behavior, sidebar, file-tree]
 
 ## Collapsing
 
-- The sidebar header collapses all folders and clears their expansion records.
-- On hover, each first-level folder shows the same action for its own branch only.
+- The sidebar header's chevron collapses all folders and clears their expansion
+  records. Nothing is kept open.
+- A folder with at least one subfolder has a collapse button while it is open.
+  The button is hidden until the pointer is over the button itself, not the whole
+  row. A press takes one step:
+  - If an open folder sits inside it, the press closes every folder inside it and
+    keeps the folder open.
+  - Otherwise the press closes the folder itself with its branch.
+- Folders without subfolders have no button. The expansion saved for the workspace
+  is the expansion shown after each press.
 
 ## File operations
 
@@ -44,8 +52,9 @@ tags: [behavior, sidebar, file-tree]
 ## Constraints
 
 - Tree rows cannot be dragged. Per-row drag support made scrolling slow in large
-  trees with hidden files shown. Per-row hover is limited to expanded top-level
-  folders for the same reason. Tab reordering is separate; see
+  trees with hidden files shown. Hover is tracked only on the collapse button's
+  own slot, of open folders that have subfolders; no other row is tracked, and
+  the folder row itself is not. Tab reordering is separate; see
   [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
 - Limits of the tree on very large or unusual folders (permission-denied
   directories, symlinks, concurrent renames) are not covered by automated checks;

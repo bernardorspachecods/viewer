@@ -39,8 +39,10 @@ that produces it. Module boundaries and coordination are in
 
 - Expanded branches are flattened into a list of visible rows before `LazyVStack`
   renders them. Scrolling never builds one recursive view holding every descendant.
-- Tree rows have no drag and drop, and per-row hover is limited to expanded
-  top-level folders. The reason is in [file-tree.md](/docs/behavior/file-tree.md).
+- Tree rows have no drag and drop. Hover is tracked only on the collapse button
+  slot of open folders with subfolders (`FolderCollapseSlot`). Its step rules are
+  pure logic in `FolderCollapseRules` (Core). The reason is in
+  [file-tree.md](/docs/behavior/file-tree.md).
 
 ## Surfaces and coupling
 

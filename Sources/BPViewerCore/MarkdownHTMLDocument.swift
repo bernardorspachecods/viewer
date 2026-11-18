@@ -12,6 +12,19 @@ struct MarkdownHTMLDocument {
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: file: http: https:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
           <style>
+        \(Self.stylesheet)
+          </style>
+        </head>
+        <body>
+        <main class="bp-document-content">
+        \(body)
+        </main>
+        </body>
+        </html>
+        """
+    }
+
+    private static let stylesheet = """
             :root { color-scheme: light dark; }
             html {
               width: 100%;
@@ -146,14 +159,5 @@ struct MarkdownHTMLDocument {
               text-align: center;
             }
             .math-block math { max-width: 100%; }
-          </style>
-        </head>
-        <body>
-        <main class="bp-document-content">
-        \(body)
-        </main>
-        </body>
-        </html>
         """
-    }
 }

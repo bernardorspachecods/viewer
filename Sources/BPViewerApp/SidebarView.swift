@@ -317,7 +317,6 @@ struct FileTreeRow: View {
     let node: FileNode
     let level: Int
     let highlightedNodeIDs: Set<String>
-    @State private var isHovering = false
 
     var body: some View {
         baseRow
@@ -332,23 +331,30 @@ struct FileTreeRow: View {
             }
             .buttonStyle(.plain)
 
-            if shouldShowCollapseButton {
-                CollapseFoldersButton(
-                    helpText: "Close folder",
+            if showsCollapseButton {
+                FolderCollapseSlot(
+                    helpText: FolderCollapseRules.helpText(for: collapseStep),
                     action: { model.collapseFolder(node) }
                 )
                 .padding(.trailing, BPTokens.Spacing.sm)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .modifier(RowHoverModifier(isEnabled: tracksHover, isHovering: $isHovering))
         .modifier(WorkspaceContextMenuModifier(target: .file(node)))
     }
 
-    /// Hover only drives the "Close folder" button of expanded top-level
-    /// folders. Every other row skips the per-row tracking area.
-    private var tracksHover: Bool {
-        node.isDirectory && level == 0 && model.expandedPaths.contains(node.id)
+    /// Only expanded folders with subfolders have the collapse button. The
+    /// button's own slot tracks hover; the row is never tracked as a whole.
+    private var showsCollapseButton: Bool {
+        FolderCollapseRules.showsButton(
+            isDirectory: node.isDirectory,
+            hasSubfolders: FolderCollapseRules.hasSubfolders(node.children),
+            isExpanded: model.expandedPaths.contains(node.id)
+        )
+    }
+
+    private var collapseStep: FolderCollapseRules.Step {
+        FolderCollapseRules.step(for: node.id, expandedPaths: model.expandedPaths)
     }
 
     private var rowLabel: some View {
@@ -364,7 +370,7 @@ struct FileTreeRow: View {
         .padding(.leading, BPTokens.Spacing.sm + CGFloat(level) * BPTokens.Spacing.md)
         .padding(
             .trailing,
-            shouldShowCollapseButton
+            showsCollapseButton
                 ? BPTokens.Spacing.sm + 28
                 : BPTokens.Spacing.sm
         )
@@ -396,13 +402,6 @@ struct FileTreeRow: View {
         }
     }
 
-    private var shouldShowCollapseButton: Bool {
-        node.isDirectory
-            && level == 0
-            && isHovering
-            && model.expandedPaths.contains(node.id)
-    }
-
     private var iconColor: Color {
         switch node.kind {
         case .markdown: .blue
@@ -417,17 +416,18 @@ struct FileTreeRow: View {
     }
 }
 
-private struct RowHoverModifier: ViewModifier {
-    let isEnabled: Bool
-    @Binding var isHovering: Bool
+/// A folder's collapse button. It is drawn only while the pointer is over its
+/// own slot; the button stays hit-testable while transparent, so entering the
+/// slot is what reveals it.
+struct FolderCollapseSlot: View {
+    let helpText: String
+    let action: () -> Void
+    @State private var isHovering = false
 
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if isEnabled {
-            content.onHover { isHovering = $0 }
-        } else {
-            content.onAppear { isHovering = false }
-        }
+    var body: some View {
+        CollapseFoldersButton(helpText: helpText, action: action)
+            .opacity(isHovering ? 1 : 0)
+            .onHover { isHovering = $0 }
     }
 }
 
