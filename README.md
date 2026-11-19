@@ -31,8 +31,8 @@ Viewer is shared as source code. Clone the repository and start it with Swift
 Package Manager:
 
 ```sh
-git clone https://github.com/bernardorspachecods/bp-viewer.git
-cd bp-viewer
+git clone https://github.com/bernardorspachecods/viewer.git
+cd viewer
 swift run Viewer
 ```
 
