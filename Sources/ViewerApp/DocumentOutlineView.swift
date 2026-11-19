@@ -113,11 +113,13 @@ struct DocumentInteractionToolbar: View {
                     Button(action: onUndo) {
                         Label("Undo", systemImage: "arrow.uturn.backward")
                     }
+                    .buttonStyle(QuietButtonStyle.text)
                     .disabled(editingSession.undoSources.isEmpty)
 
                     Button(action: onRedo) {
                         Label("Redo", systemImage: "arrow.uturn.forward")
                     }
+                    .buttonStyle(QuietButtonStyle.text)
                     .disabled(editingSession.redoSources.isEmpty)
                 }
 

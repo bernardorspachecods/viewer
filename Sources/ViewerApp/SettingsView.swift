@@ -2,6 +2,8 @@ import ViewerCore
 import SwiftUI
 
 struct SettingsView: View {
+    @EnvironmentObject private var model: AppModel
+
     var body: some View {
         TabView {
             ZoomSettingsView()
@@ -24,6 +26,11 @@ struct SettingsView: View {
                     Label("Workspaces", systemImage: "folder")
                 }
 
+            WindowSizeSettingsView(session: model.workspaceSession)
+                .tabItem {
+                    Label("Windows", systemImage: "macwindow")
+                }
+
             FilesSettingsView()
                 .tabItem {
                     Label("Files", systemImage: "doc.on.doc")
@@ -34,8 +41,8 @@ struct SettingsView: View {
                     Label("LaTeX", systemImage: "doc.text")
                 }
         }
-        .frame(width: 460)
-        .frame(minHeight: 340)
+        .frame(width: 540)
+        .frame(minHeight: 380)
     }
 }
 

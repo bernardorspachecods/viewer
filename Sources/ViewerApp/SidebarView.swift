@@ -59,7 +59,7 @@ struct SidebarView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: BPTokens.Spacing.xs) {
-                Menu {
+                ToolbarMenu(systemName: "gearshape", help: "Sidebar options") {
                     Toggle(isOn: Binding(
                         get: { model.showSelectedFilesOnly },
                         set: { model.updateShowSelectedFilesOnly($0) }
@@ -73,30 +73,15 @@ struct SidebarView: View {
                     )) {
                         Text("Show hidden files")
                     }
-                } label: {
-                    Image(systemName: "gearshape")
-                        .frame(width: 22, height: 22)
-                        .iconButtonHitArea()
                 }
-                .menuStyle(.borderlessButton)
                 .focusable(false)
-                .help("Sidebar options")
-                .accessibilityLabel("Sidebar options")
 
                 Spacer(minLength: 0)
 
-                Button {
+                ToolbarIconButton(systemName: "arrow.clockwise", help: "Refresh files") {
                     model.reloadTree()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .frame(width: 22, height: 22)
-                        .iconButtonHitArea()
                 }
-                .buttonStyle(.plain)
-                .focusable(false)
                 .disabled(model.rootURL == nil || model.isScanningTree)
-                .help("Refresh files")
-                .accessibilityLabel("Refresh files")
 
                 CollapseFoldersButton(
                     systemName: rootStep == .expandRoot ? "chevron.down" : "chevron.up",

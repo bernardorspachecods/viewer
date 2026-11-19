@@ -157,7 +157,7 @@ struct WorkspaceHeaderBar: View {
                 ToolbarIconButton(systemName: "list.bullet.rectangle", help: "Choose Main LaTeX Document") {
                     model.changeLatexRoot()
                 }
-                Menu {
+                ToolbarMenu(systemName: "gearshape", help: "Advanced LaTeX Settings") {
                     Picker("Shell escape", selection: Binding(
                         get: { model.latexShellEscapeMode },
                         set: { model.setLatexShellEscapeMode($0) }
@@ -166,13 +166,7 @@ struct WorkspaceHeaderBar: View {
                             Text(mode.label).tag(mode)
                         }
                     }
-                } label: {
-                    Image(systemName: "gearshape")
-                        .frame(width: BPTokens.Size.control, height: BPTokens.Size.control)
-                        .iconButtonHitArea()
                 }
-                .menuStyle(.borderlessButton)
-                .help("Advanced LaTeX Settings")
             }
 
             if model.canCaptureActivePreview {
@@ -185,11 +179,14 @@ struct WorkspaceHeaderBar: View {
                 ToolbarIconButton(systemName: "minus.magnifyingglass", help: "Zoom Out") {
                     model.zoomOut()
                 }
-                Button("\(Int(model.previewZoom * 100))%", action: model.resetPreviewZoom)
-                    .buttonStyle(.plain)
-                    .font(BPTokens.Typography.caption)
-                    .frame(minWidth: 42)
-                    .help("Reset Zoom")
+                Button(action: model.resetPreviewZoom) {
+                    Text("\(Int(model.previewZoom * 100))%")
+                        .font(BPTokens.Typography.caption)
+                        .monospacedDigit()
+                        .frame(minWidth: 30)
+                }
+                .buttonStyle(QuietButtonStyle.text)
+                .help("Reset Zoom")
                 ToolbarIconButton(systemName: "plus.magnifyingglass", help: "Zoom In") {
                     model.zoomIn()
                 }

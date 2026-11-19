@@ -98,14 +98,14 @@ struct PreviewErrorBanner: View {
                     didCopy = true
                 } label: {
                     Image(systemName: didCopy ? "checkmark.circle" : "doc.on.doc")
-                        .iconButtonHitArea()
+                        .frame(width: BPTokens.Size.control, height: BPTokens.Size.control)
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(QuietButtonStyle(symbolSize: BPTokens.Size.controlSymbol))
                 .help(didCopy ? "Copied" : "Copy Message")
                 Spacer()
                 if let onRetry {
                     Button("Try Again", action: onRetry)
-                        .buttonStyle(.borderless)
+                        .buttonStyle(QuietButtonStyle.text)
                 }
             }
         }

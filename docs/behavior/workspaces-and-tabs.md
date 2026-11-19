@@ -10,9 +10,9 @@ tags: [behavior, workspaces, tabs]
 
 - A workspace is one local folder, shown as a native macOS window tab with its
   own header, sidebar, file tree, and document tab bar.
-- A workspace window reopens at the size and position it had when it was last
-  moved or resized, and 1200 × 780 before any is saved. Reader and capture windows
-  always open at the default size.
+- A workspace window reuses its saved position. Its opening size follows
+  [Settings > Windows](/docs/behavior/settings-and-persistence.md#settings).
+- Capture windows opened as a fallback for `⌥⌘E` use the standard opening size.
 - The folder button, the native `+`, and `⇧⌘T` open a folder through the folder
   picker in a new workspace tab. A folder that is already open is focused, not
   opened a second time.
@@ -25,6 +25,10 @@ tags: [behavior, workspaces, tabs]
 
 ## Header bar
 
+- Buttons in the header, sidebar toolbar, document tab strip, and editing controls
+  use a muted foreground at rest. The foreground gains contrast under the pointer
+  and when pressed, with a slight increase in weight on action buttons. Tab titles
+  keep their regular weight. Active editing modes stay emphasized.
 - One row above the sidebar and the document area. In a workspace window it
   shows the sidebar toggle, the folder button, the workspace name and path (copy
   on hover), then the active document's title and path.
@@ -71,9 +75,8 @@ tags: [behavior, workspaces, tabs]
   bar, and dialogs keep their own Esc behavior, and Esc does nothing when focus mode
   is off.
 - `⌘F` still opens the find bar inside the focused view.
-- Focus mode is per window and is not saved: every launch starts with it off. It
-  does not change the saved sidebar setting, so leaving focus mode brings back the
-  sidebar state the window had before.
+- Focus mode is per window and is not saved. Leaving it brings back the sidebar
+  state the window had before.
 - Standalone reader windows and workspace windows both support it.
 
 ## Launch and restore

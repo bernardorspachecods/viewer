@@ -32,8 +32,12 @@ tags: [behavior, capture, snapshots, reader-window]
 
 ## Reader windows
 
-- `⇧⌘E` always opens a standalone reader window for the file and leaves workspace
-  windows untouched.
+- `⇧⌘E` opens the reply in a standalone reader window with
+  [Focus Mode](/docs/behavior/workspaces-and-tabs.md#focus-mode) on, so the preview
+  fills the window.
+- Reader windows open centered. `⇧⌘E` uses the size chosen in
+  [Settings > Windows](/docs/behavior/settings-and-persistence.md#settings).
+  Markdown files opened from Finder use the standard opening size.
 - The reader shows the rendered reply. Its header has the document title, path,
   update time, status, and the zoom, screenshot, and theme controls. It has no
   sidebar, folder, workspace name, or tab bar.
@@ -41,8 +45,6 @@ tags: [behavior, capture, snapshots, reader-window]
   preview.
 - `⌘W` closes the reader window rather than its tab while the window holds a single
   tab.
-- Reader windows always open at the default size. They do not remember their size
-  or position; see [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
 
 ## Snapshots
 

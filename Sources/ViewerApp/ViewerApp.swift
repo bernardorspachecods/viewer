@@ -22,8 +22,8 @@ struct ViewerApp: App {
                 .environmentObject(model)
         }
         .defaultSize(
-            width: WorkspaceWindowMetrics.defaultWidth,
-            height: WorkspaceWindowMetrics.defaultHeight
+            width: CGFloat(WindowOpeningSize.standard.width),
+            height: CGFloat(WindowOpeningSize.standard.height)
         )
         .restorationBehavior(.disabled)
         .commands {

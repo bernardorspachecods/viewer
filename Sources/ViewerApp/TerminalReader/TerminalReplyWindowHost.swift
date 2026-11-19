@@ -35,6 +35,11 @@ extension WorkspaceWindowManager: TerminalReplyHost {
         if destination == .readerWindow || existingWindow?.isMiniaturized == true {
             let presentation: WindowPresentation = destination == .readerWindow ? .reader : .standalone
             let (captureModel, captureWindow) = makeStandaloneWindow(presentation)
+            if presentation.isReader {
+                captureModel.setFocusMode(true)
+                captureWindow.applyOpeningSize(session.windowOpeningPreferences.reader)
+                captureWindow.center()
+            }
             bringForward(captureWindow, model: captureModel)
             return captureModel
         }

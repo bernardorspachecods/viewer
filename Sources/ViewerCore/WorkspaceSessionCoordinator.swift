@@ -103,6 +103,14 @@ public final class WorkspaceSessionCoordinator {
         updateGlobal { $0.launchBehavior = behavior.rawValue }
     }
 
+    public var windowOpeningPreferences: WindowOpeningPreferences {
+        state.global.windowOpeningPreferences
+    }
+
+    public func setWindowOpeningPreferences(_ preferences: WindowOpeningPreferences) {
+        updateGlobal { $0.windowOpeningPreferences = preferences }
+    }
+
     public func addDefaultWorkspaceFolder(_ rootURL: URL) {
         let path = workspaceKey(for: rootURL)
         updateGlobal { global in

@@ -20,9 +20,10 @@ document covers how it is stored.
 - The workspace order and the active workspace are stored to restore the window
   tabs at launch. The launch fallback is in
   [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
-- Workspace window frames are saved by AppKit under the frame autosave name in
-  `WorkspaceWindowMetrics`, not by `WorkspaceSessionCoordinator`. Reader and capture
-  windows never use that name.
+- AppKit saves the workspace frame under the shared autosave name in
+  `WorkspaceWindowManager`. When a custom workspace size is set, the manager applies
+  it after restoring the frame. The opening preferences are part of the global
+  Codable state. Reader and capture windows have no frame autosave name.
 - Transient state is not stored: diff state exists only in memory, and rendered HTML,
   PDFs, logs, and raw content are not session state.
 - Snapshot PNG files are stored in Application Support, outside the repository.

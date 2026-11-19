@@ -106,7 +106,7 @@ struct TabItemView: View {
     let onSelect: () -> Void
 
     var body: some View {
-        ZStack(alignment: .trailing) {
+        HStack(spacing: 2) {
             Button {
                 onSelect()
             } label: {
@@ -117,30 +117,23 @@ struct TabItemView: View {
                             .lineLimit(1)
                         if tab.subtitle != tab.title {
                             Text(tab.subtitle)
-                                .font(BPTokens.Typography.caption)
-                                .foregroundStyle(BPTokens.Color.muted)
+                                .font(.caption2)
                         }
                     }
                 }
                 .font(BPTokens.Typography.caption)
                 .padding(.leading, BPTokens.Spacing.xs)
-                .padding(.trailing, 26)
-                .contentShape(Rectangle())
+                .frame(maxWidth: .infinity, minHeight: BPTokens.Size.control, alignment: .leading)
             }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(QuietButtonStyle(isSelected: isIndicatorActive, emphasisWeight: .regular))
 
             Button {
                 model.closeTab(tab)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .medium))
-                    .frame(width: 14, height: 14)
-                    .iconButtonHitArea()
+                    .frame(width: 24, height: 24)
             }
-            .buttonStyle(.plain)
-            .contentShape(Rectangle())
-            .zIndex(1)
+            .buttonStyle(QuietButtonStyle(symbolSize: 9))
         }
         .padding(.horizontal, BPTokens.Spacing.xs)
         .frame(minWidth: 150, minHeight: 36)

@@ -91,7 +91,7 @@ struct DocumentDiffView: View {
             )
             if baseline != nil {
                 Button("Discard Git Changes", role: .destructive, action: onDiscardGitChanges)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(QuietButtonStyle.text)
                     .disabled(diff?.hasChanges != true)
             }
             Spacer(minLength: 0)

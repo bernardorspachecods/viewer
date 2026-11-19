@@ -26,6 +26,7 @@ enum BPTokens {
         static let toolbar: CGFloat = 44
         static let row: CGFloat = 28
         static let control: CGFloat = 28
+        static let controlSymbol: CGFloat = 13
         static let iconHitTarget: CGFloat = 32
         static let sidebarMin: CGFloat = 220
         static let sidebarMax: CGFloat = 480
@@ -79,15 +80,47 @@ struct ToolbarIconButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemName)
-                .symbolRenderingMode(.monochrome)
-                .foregroundStyle(BPTokens.Color.muted)
-                .frame(width: BPTokens.Size.control, height: BPTokens.Size.control)
-                .iconButtonHitArea()
+            ToolbarSymbol(systemName: systemName)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(QuietButtonStyle(symbolSize: BPTokens.Size.controlSymbol))
         .focusable(false)
-        .contentShape(Rectangle())
+        .help(help)
+        .accessibilityLabel(help)
+    }
+}
+
+private struct ToolbarSymbol: View {
+    let systemName: String
+
+    var body: some View {
+        Image(systemName: systemName)
+            .symbolRenderingMode(.monochrome)
+            .frame(width: BPTokens.Size.control, height: BPTokens.Size.control)
+    }
+}
+
+struct ToolbarMenu<Contents: View>: View {
+    let systemName: String
+    let help: String
+    @ViewBuilder var contents: () -> Contents
+
+    var body: some View {
+        Menu(content: contents) {
+            Color.clear
+                .frame(width: BPTokens.Size.control, height: BPTokens.Size.control)
+                .contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .frame(width: BPTokens.Size.control, height: BPTokens.Size.control)
+        .overlay {
+            // The native menu tints its own label. Draw the same symbol as
+            // the toolbar buttons and let the menu receive every event.
+            ToolbarSymbol(systemName: systemName)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .modifier(QuietControlFeedback(symbolSize: BPTokens.Size.controlSymbol))
         .help(help)
         .accessibilityLabel(help)
     }
@@ -121,13 +154,10 @@ struct CopyTextButton: View {
             }
         } label: {
             Image(systemName: didCopy ? "checkmark" : "doc.on.doc")
-                .font(.system(size: 11, weight: .medium))
                 .frame(width: BPTokens.Size.control, height: BPTokens.Size.control)
-                .iconButtonHitArea()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(QuietButtonStyle(symbolSize: 11))
         .focusable(false)
-        .contentShape(Rectangle())
         .opacity(isVisible ? 1 : 0)
         .allowsHitTesting(isVisible)
         .accessibilityHidden(!isVisible)
@@ -196,7 +226,7 @@ struct EmptyStateView: View {
 
             if let actionTitle, let action {
                 Button(actionTitle, action: action)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(QuietButtonStyle.text)
             }
         }
         .padding(BPTokens.Spacing.xl)

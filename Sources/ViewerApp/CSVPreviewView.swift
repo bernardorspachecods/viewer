@@ -39,18 +39,20 @@ struct CSVPreviewView: View {
                     Button(action: onUndo) {
                         Label("Undo", systemImage: "arrow.uturn.backward")
                     }
+                    .buttonStyle(QuietButtonStyle.text)
                     .disabled(editingSession.undoSources.isEmpty)
 
                     Button(action: onRedo) {
                         Label("Redo", systemImage: "arrow.uturn.forward")
                     }
+                    .buttonStyle(QuietButtonStyle.text)
                     .disabled(editingSession.redoSources.isEmpty)
 
                     if editingSession.conflict != nil {
                         Button("Keep Mine", action: onKeepLocalEdit)
-                            .buttonStyle(.borderless)
+                            .buttonStyle(QuietButtonStyle.text)
                         Button("Use External", action: onUseExternalEdit)
-                            .buttonStyle(.borderless)
+                            .buttonStyle(QuietButtonStyle.text)
                     }
                     DocumentEditActionBar(
                         saveState: editingSession.saveState,

@@ -18,10 +18,6 @@ struct DocumentEditActionBar: View {
         saveState == .saved
     }
 
-    var saveButtonOpacity: Double {
-        isSaveDisabled ? 0.55 : 1
-    }
-
     var body: some View {
         HStack(spacing: BPTokens.Spacing.sm) {
             if showsStatus {
@@ -32,13 +28,11 @@ struct DocumentEditActionBar: View {
 
             if showsDiscardChanges {
                 Button("Discard Changes", role: .destructive, action: onDiscard)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(QuietButtonStyle.text)
             }
 
             Button("Save", action: onSave)
-                .buttonStyle(.borderedProminent)
-                .tint(isSaveDisabled ? BPTokens.Color.muted : .accentColor)
-                .opacity(saveButtonOpacity)
+                .buttonStyle(QuietButtonStyle.text)
                 .disabled(isSaveDisabled)
         }
     }
@@ -54,19 +48,12 @@ struct DocumentEditModeButton: View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
                 .font(BPTokens.Typography.caption)
-                .foregroundStyle(isActive ? Color.primary : BPTokens.Color.muted)
-                .padding(.horizontal, BPTokens.Spacing.sm)
-                .padding(.vertical, BPTokens.Spacing.xs)
-                .frame(minHeight: BPTokens.Size.iconHitTarget)
-                .background {
-                    RoundedRectangle(cornerRadius: BPTokens.Radius.sm)
-                        .fill(isActive ? Color.primary.opacity(0.08) : .clear)
-                        .padding(.horizontal, BPTokens.Spacing.xxs)
-                        .padding(.vertical, BPTokens.Spacing.xs - BPTokens.Spacing.xxs)
-                }
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(QuietButtonStyle(
+            isSelected: isActive,
+            horizontalPadding: BPTokens.Spacing.sm,
+            minimumHeight: BPTokens.Size.control
+        ))
         .focusable(false)
         .accessibilityValue(isActive ? "Active" : "Inactive")
     }

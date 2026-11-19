@@ -8,13 +8,6 @@ struct CollapseFoldersButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .frame(width: 22, height: 22)
-                .iconButtonHitArea()
-        }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .help(helpText)
+        ToolbarIconButton(systemName: systemName, help: helpText, action: action)
     }
 }

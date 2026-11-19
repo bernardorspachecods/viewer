@@ -31,7 +31,10 @@ struct RootView: View {
         // sheets come first in the responder chain). A no-op when focus mode is off.
         .onExitCommand { model.exitFocusMode() }
         .preferredColorScheme(model.theme.colorScheme)
-        .frame(minWidth: WorkspaceWindowMetrics.minimumWidth, minHeight: WorkspaceWindowMetrics.minimumHeight)
+        .frame(
+            minWidth: CGFloat(WindowOpeningSize.minimum.width),
+            minHeight: CGFloat(WindowOpeningSize.minimum.height)
+        )
         .onDrop(of: [UTType.fileURL.identifier], isTargeted: nil) { providers in
             for provider in providers {
                 let _ = provider.loadObject(ofClass: URL.self) { url, _ in

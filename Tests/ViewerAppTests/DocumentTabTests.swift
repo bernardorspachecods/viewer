@@ -204,11 +204,9 @@ func hidesCompletedDocumentActionsAfterSaving() {
     #expect(savedBar.showsStatus == false)
     #expect(savedBar.showsDiscardChanges == false)
     #expect(savedBar.isSaveDisabled)
-    #expect(savedBar.saveButtonOpacity == 0.55)
     #expect(unsavedBar.showsStatus)
     #expect(unsavedBar.showsDiscardChanges)
     #expect(unsavedBar.isSaveDisabled == false)
-    #expect(unsavedBar.saveButtonOpacity == 1)
 }
 
 @Test("discards an active Markdown draft without closing its tab")

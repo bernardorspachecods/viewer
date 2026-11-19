@@ -368,8 +368,9 @@ struct MarkdownConflictView: View {
             HStack {
                 Spacer()
                 Button("Use External Version", action: onUseExternal)
+                    .buttonStyle(QuietButtonStyle.text)
                 Button("Keep My Changes", action: onKeepLocal)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(QuietButtonStyle.text)
             }
         }
         .padding(.horizontal, BPTokens.Spacing.md)

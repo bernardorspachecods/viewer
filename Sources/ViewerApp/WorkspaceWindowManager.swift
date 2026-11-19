@@ -2,20 +2,6 @@ import AppKit
 import ViewerCore
 import SwiftUI
 
-/// Sizes and frame name of workspace windows. Defined once: the window
-/// factory, the SwiftUI root minimum, and the launch scene read these values.
-enum WorkspaceWindowMetrics {
-    /// Size of a workspace window before any frame has been saved.
-    static let defaultWidth: CGFloat = 1200
-    static let defaultHeight: CGFloat = 780
-    /// Smallest size SwiftUI lets a window shrink to, for every presentation.
-    static let minimumWidth: CGFloat = 900
-    static let minimumHeight: CGFloat = 600
-    /// Name AppKit saves the frame of workspace windows under. Standalone
-    /// windows (reader and capture) never use it.
-    static let frameAutosaveName = "com.bernardopacheco.viewer.workspace-frame"
-}
-
 /// Owns the native macOS windows that represent open workspaces.
 ///
 /// Each window keeps its own AppModel alive, so selecting a native window tab
@@ -25,6 +11,7 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
     static let shared = WorkspaceWindowManager()
 
     static let tabbingIdentifier = "com.bernardopacheco.viewer.workspace"
+    private static let frameAutosaveName = "com.bernardopacheco.viewer.workspace-frame"
 
     let session: WorkspaceSessionCoordinator
     var openMainWindow: (() -> Void)?
@@ -79,6 +66,7 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         guard let model else { return }
 
         let id = ObjectIdentifier(window)
+        let isNewWindow = windows[id] == nil
         models[id] = model
         windows[id] = window
         lastKnownModel = model
@@ -89,7 +77,9 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         } else {
             window.tabbingMode = .preferred
             window.tabbingIdentifier = Self.tabbingIdentifier
-            restoreWorkspaceFrame(window)
+            if isNewWindow {
+                restoreWorkspaceFrame(window)
+            }
         }
         updateWindowTitle(window, for: model)
         model.attach(to: window)
@@ -340,16 +330,14 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         persistWorkspaceLayout()
     }
 
-    /// Creates the window for a model. Standalone windows open centered at the
-    /// default size. Workspace windows get their frame from `register`, which
-    /// restores the saved one.
+    /// Creates the default frame. Workspace windows apply launch preferences on registration.
     func makeWindow(for model: AppModel) -> NSWindow {
         let window = NSWindow(
             contentRect: NSRect(
                 x: 0,
                 y: 0,
-                width: WorkspaceWindowMetrics.defaultWidth,
-                height: WorkspaceWindowMetrics.defaultHeight
+                width: CGFloat(WindowOpeningSize.standard.width),
+                height: CGFloat(WindowOpeningSize.standard.height)
             ),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
             backing: .buffered,
@@ -365,15 +353,16 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         return window
     }
 
-    /// Restores the saved workspace frame, or centers the window when none is
-    /// saved, then keeps saving its frame. Native tabs share one autosave name,
-    /// so each workspace window reads and writes the same frame. The check on
-    /// the name makes this a no-op for a window already set up, such as one
-    /// re-registered by a later call.
+    /// Native workspace tabs share a saved frame. Apply the custom size after
+    /// restoring the saved position, then attach autosave for later resizes.
     private func restoreWorkspaceFrame(_ window: NSWindow) {
-        let name = WorkspaceWindowMetrics.frameAutosaveName
+        let name = Self.frameAutosaveName
         guard window.frameAutosaveName != name else { return }
-        if !window.setFrameUsingName(name) {
+        let restored = window.setFrameUsingName(name)
+        if let openingSize = session.windowOpeningPreferences.workspaceOpeningSize {
+            window.applyOpeningSize(openingSize)
+        }
+        if !restored {
             window.center()
         }
         _ = window.setFrameAutosaveName(name)
