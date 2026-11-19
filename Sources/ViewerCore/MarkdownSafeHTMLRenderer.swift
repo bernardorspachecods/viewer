@@ -8,20 +8,24 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
     let specialRegions: [MarkdownSpecialRegion]
     private(set) var html = ""
     private var headingCounts: [String: Int] = [:]
+    private var columnAlignments: [Table.ColumnAlignment?] = []
     private let mathRenderer = TeXMathMLRenderer()
     private(set) var dependencies: Set<URL> = []
     private(set) var outline: [MarkdownOutlineEntry] = []
+    private let codeHighlighter: (any MarkdownCodeHighlighting)?
 
     init(
         baseURL: URL,
         source: String,
         editableBlocks: [MarkdownEditableBlock],
-        specialRegions: [MarkdownSpecialRegion]
+        specialRegions: [MarkdownSpecialRegion],
+        codeHighlighter: (any MarkdownCodeHighlighting)? = nil
     ) {
         self.baseURL = baseURL
         self.source = source
         self.editableBlocks = editableBlocks
         self.specialRegions = specialRegions
+        self.codeHighlighter = codeHighlighter
     }
 
     mutating func visitDocument(_ document: Document) {
@@ -39,7 +43,14 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
 
     mutating func visitCodeBlock(_ codeBlock: CodeBlock) {
         let languageClass = codeBlock.language.map { " class=\"language-\(escapeAttribute($0))\"" } ?? ""
-        html += "<pre\(editableAttribute(for: codeBlock))><code\(languageClass)>\(escapeText(codeBlock.code))</code></pre>\n"
+        html += "<pre\(editableAttribute(for: codeBlock))><code\(languageClass)>\(codeHTML(codeBlock))</code></pre>\n"
+    }
+
+    /// The escaped code, with colored spans when the highlighter returns any.
+    private func codeHTML(_ codeBlock: CodeBlock) -> String {
+        let spans = codeHighlighter?.spans(code: codeBlock.code, language: codeBlock.language) ?? []
+        guard !spans.isEmpty else { return escapeText(codeBlock.code) }
+        return MarkdownCodeSpanHTML.html(code: codeBlock.code, spans: spans, escape: { escapeText($0) })
     }
 
     mutating func visitHeading(_ heading: Heading) {
@@ -104,6 +115,7 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
     }
 
     mutating func visitTable(_ table: Table) {
+        columnAlignments = table.columnAlignments
         html += "<table\(editableAttribute(for: table))>"
         descendInto(table)
         html += "</table>\n"
@@ -129,9 +141,23 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
 
     mutating func visitTableCell(_ tableCell: Table.Cell) {
         let tag = tableCell.parent is Table.Head ? "th" : "td"
-        html += "<\(tag)>"
+        html += "<\(tag)\(alignmentAttribute(forColumn: tableCell.indexInParent))>"
         descendInto(tableCell)
         html += "</\(tag)>"
+    }
+
+    /// The GFM column alignment (`:---:`, `---:`) as an inline style; empty when the column has none.
+    private func alignmentAttribute(forColumn index: Int) -> String {
+        guard columnAlignments.indices.contains(index), let alignment = columnAlignments[index] else {
+            return ""
+        }
+        let value: String
+        switch alignment {
+        case .left: value = "left"
+        case .center: value = "center"
+        case .right: value = "right"
+        }
+        return " style=\"text-align:\(value)\""
     }
 
     mutating func visitInlineCode(_ inlineCode: InlineCode) {
@@ -263,8 +289,16 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
             })
         }
         let attribute = region.map(specialAttribute(for:)) ?? ""
-        // Show the tag itself, so a stray `<span>` is visible as what it is.
-        html += "<span class=\"bp-special-placeholder\"\(attribute)>\(escapeText(inlineHTML.rawHTML))</span>"
+        // Show the tag itself, so a stray `<span>` is visible as what it is. A comment shows only its
+        // text, as the editor does when the caret is away from it.
+        let shown = Self.commentText(inlineHTML.rawHTML) ?? inlineHTML.rawHTML
+        html += "<span class=\"bp-special-placeholder\"\(attribute)>\(escapeText(shown))</span>"
+    }
+
+    /// The text between `<!--` and `-->`, or nil when `rawHTML` is not one whole comment.
+    private static func commentText(_ rawHTML: String) -> String? {
+        guard rawHTML.hasPrefix("<!--"), rawHTML.hasSuffix("-->"), rawHTML.count >= 7 else { return nil }
+        return String(rawHTML.dropFirst(4).dropLast(3))
     }
 
     private func safeURL(_ rawURL: String?) -> String? {
@@ -288,7 +322,7 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
             return ""
         }
         let supportAttribute = block.supportsVisualEditing ? "true" : "false"
-        return " data-bp-block-id=\"\(escapeAttribute(block.id))\" data-bp-editable=\"\(supportAttribute)\""
+        return " data-bp-block-id=\"\(escapeAttribute(block.id))\" data-bp-source-offset=\"\(block.sourceRange.startOffset)\" data-bp-editable=\"\(supportAttribute)\""
     }
 
     private func specialAttribute(for markup: Markup, kind: MarkdownSpecialKind) -> String {
@@ -302,7 +336,7 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
     }
 
     private func specialAttribute(for region: MarkdownSpecialRegion) -> String {
-        " data-bp-special-kind=\"\(region.kind.rawValue)\" data-bp-special-id=\"\(escapeAttribute(region.id))\" data-bp-special-source=\"\(escapeAttribute(region.source))\""
+        " data-bp-source-offset=\"\(region.sourceRange.startOffset)\" data-bp-special-kind=\"\(region.kind.rawValue)\" data-bp-special-id=\"\(escapeAttribute(region.id))\" data-bp-special-source=\"\(escapeAttribute(region.source))\""
     }
 
     private func sourceOffset(for location: SourceLocation) -> Int {

@@ -344,8 +344,6 @@ extension AppModel {
         guard tabs.contains(tab) else { return }
         latexRenderDebounceTasks[tab.id]?.cancel()
         latexRenderDebounceTasks[tab.id] = nil
-        markdownRenderDebounceTasks[tab.id]?.cancel()
-        markdownRenderDebounceTasks[tab.id] = nil
         documentRenderCoordinator.cancel(tabIDs: [tab.id])
         if pendingLatexRootSelection?.tabID == tab.id {
             pendingLatexRootSelection = nil
@@ -353,12 +351,13 @@ extension AppModel {
         if pendingLatexExternalDependencies?.tabID == tab.id {
             pendingLatexExternalDependencies = nil
         }
-        let wasActive = activeTabID == tab.id
+        // The focused tab or the split partner: either one changes what is shown and watched.
+        let wasVisible = visibleTabIDs.contains(tab.id)
         var session = documentTabSession
         guard session.close(id: tab.id) else { return }
         applyDocumentTabSession(session)
         syncPreviewZoomToActiveTab()
-        if wasActive {
+        if wasVisible {
             renderActiveTabIfNeeded()
         }
         persistState()

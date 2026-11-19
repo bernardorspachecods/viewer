@@ -1,11 +1,26 @@
 import Foundation
 
-/// Owns document-tab identity, ordering and selection without knowing the UI.
+/// Which pane of a split session a tab occupies.
+public enum DocumentSplitSide: Hashable, Sendable { case leading, trailing }
+
+fileprivate extension DocumentSplitSide {
+    var opposite: DocumentSplitSide { self == .leading ? .trailing : .leading }
+}
+
+/// Owns document-tab identity, ordering, selection and the two-pane split without knowing the UI.
+///
+/// `activeTabID` is the focused pane. While split, `splitPartnerID` is the tab in the other pane
+/// and `activeSide` says which side the focused tab is on.
 public struct DocumentTabSession: Equatable, Sendable {
     public private(set) var tabs: [DocumentTab]
     public private(set) var activeTabID: String?
+    /// The tab in the non-focused pane. nil when not split.
+    public private(set) var splitPartnerID: String?
+    /// The side of the active tab.
+    public private(set) var activeSide: DocumentSplitSide
 
-    public init(tabs: [DocumentTab] = [], activeTabID: String? = nil) {
+    public init(tabs: [DocumentTab] = [], activeTabID: String? = nil,
+                splitPartnerID: String? = nil, activeSide: DocumentSplitSide = .leading) {
         var uniqueTabs: [DocumentTab] = []
         var seenURLs = Set<URL>()
         for tab in tabs {
@@ -13,10 +28,15 @@ public struct DocumentTabSession: Equatable, Sendable {
             guard seenURLs.insert(normalizedURL).inserted else { continue }
             uniqueTabs.append(tab)
         }
-        self.tabs = uniqueTabs
-        self.activeTabID = activeTabID.flatMap { id in
+        let resolvedActiveID = activeTabID.flatMap { id in
             uniqueTabs.contains { $0.id == id } ? id : nil
         } ?? uniqueTabs.first?.id
+        self.tabs = uniqueTabs
+        self.activeTabID = resolvedActiveID
+        self.splitPartnerID = splitPartnerID.flatMap { id in
+            (uniqueTabs.contains { $0.id == id } && id != resolvedActiveID) ? id : nil
+        }
+        self.activeSide = activeSide
     }
 
     public var activeTab: DocumentTab? {
@@ -24,11 +44,23 @@ public struct DocumentTabSession: Equatable, Sendable {
         return tabs.first { $0.id == activeTabID }
     }
 
+    public var isSplit: Bool { splitPartnerID != nil }
+
+    public var leadingTabID: String? {
+        guard isSplit else { return activeTabID }
+        return activeSide == .leading ? activeTabID : splitPartnerID
+    }
+
+    public var trailingTabID: String? {
+        guard isSplit else { return nil }
+        return activeSide == .trailing ? activeTabID : splitPartnerID
+    }
+
     @discardableResult
     public mutating func open(_ tab: DocumentTab) -> Bool {
         let normalizedURL = tab.url.standardizedFileURL
         if let existing = tabs.first(where: { $0.url.standardizedFileURL == normalizedURL }) {
-            activeTabID = existing.id
+            select(id: existing.id)
             return false
         }
         tabs.append(tab)
@@ -39,7 +71,14 @@ public struct DocumentTabSession: Equatable, Sendable {
     @discardableResult
     public mutating func select(id: String) -> Bool {
         guard tabs.contains(where: { $0.id == id }) else { return false }
+        guard id != activeTabID else { return true }
+        if isSplit && id == splitPartnerID {
+            // Focus swap: the partner becomes focused and the previous focus becomes the partner.
+            splitPartnerID = activeTabID
+            activeSide = activeSide.opposite
+        }
         activeTabID = id
+        normalizeSplit()
         return true
     }
 
@@ -51,8 +90,45 @@ public struct DocumentTabSession: Equatable, Sendable {
             self.activeTabID = tabs[0].id
             return true
         }
-        self.activeTabID = tabs[(index + 1) % tabs.count].id
+        guard let splitPartnerID else {
+            self.activeTabID = tabs[(index + 1) % tabs.count].id
+            return true
+        }
+        // Skip the partner; stepping fewer than count times never lands back on the active tab.
+        for step in 1..<tabs.count {
+            let candidate = tabs[(index + step) % tabs.count]
+            if candidate.id != splitPartnerID {
+                self.activeTabID = candidate.id
+                normalizeSplit()
+                return true
+            }
+        }
+        return false
+    }
+
+    /// Drops a tab into one pane. Dropping the tab of the opposite pane swaps the two panes.
+    @discardableResult
+    public mutating func enterSplit(dropping id: String, on side: DocumentSplitSide) -> Bool {
+        guard tabs.contains(where: { $0.id == id }) else { return false }
+        guard isSplit else {
+            guard id != activeTabID, let previousActive = activeTabID else { return false }
+            splitPartnerID = previousActive
+            activeTabID = id
+            activeSide = side
+            return true
+        }
+        let otherID = paneTabID(on: side.opposite)
+        let sideID = paneTabID(on: side)
+        // Swapping puts the tab previously on `side` into the opposite pane; otherwise it stays.
+        splitPartnerID = id == otherID ? sideID : otherID
+        activeTabID = id
+        activeSide = side
+        normalizeSplit()
         return true
+    }
+
+    public mutating func closeSplit() {
+        splitPartnerID = nil
     }
 
     @discardableResult
@@ -60,6 +136,16 @@ public struct DocumentTabSession: Equatable, Sendable {
         guard let index = tabs.firstIndex(where: { $0.id == id }) else { return false }
         let wasActive = activeTabID == id
         tabs.remove(at: index)
+        if isSplit {
+            if wasActive, let partner = splitPartnerID {
+                activeTabID = partner
+                splitPartnerID = nil
+            } else if splitPartnerID == id {
+                splitPartnerID = nil
+            }
+            normalizeSplit()
+            return true
+        }
         if wasActive {
             activeTabID = tabs.indices.contains(index) ? tabs[index].id : tabs.last?.id
         } else if tabs.isEmpty {
@@ -73,6 +159,7 @@ public struct DocumentTabSession: Equatable, Sendable {
         guard let tab = tabs.first(where: { $0.id == id }) else { return false }
         tabs = [tab]
         activeTabID = tab.id
+        splitPartnerID = nil
         return true
     }
 
@@ -83,6 +170,7 @@ public struct DocumentTabSession: Equatable, Sendable {
         if let activeTabID, !tabs.contains(where: { $0.id == activeTabID }) {
             self.activeTabID = tabs.last?.id
         }
+        normalizeSplit()
         return true
     }
 
@@ -131,5 +219,18 @@ public struct DocumentTabSession: Equatable, Sendable {
 
     public var persistedPaths: [String] {
         tabs.filter { !$0.isUntitled }.map(\.url.path)
+    }
+
+    /// The tab shown in `side`. When not split only the leading pane exists, showing the active tab.
+    private func paneTabID(on side: DocumentSplitSide) -> String? {
+        side == .leading ? leadingTabID : trailingTabID
+    }
+
+    /// A partner that is gone, or equal to the active tab, is not a split.
+    private mutating func normalizeSplit() {
+        guard let partner = splitPartnerID else { return }
+        if !tabs.contains(where: { $0.id == partner }) || partner == activeTabID {
+            splitPartnerID = nil
+        }
     }
 }

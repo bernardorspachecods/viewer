@@ -19,7 +19,7 @@ struct LatexPreviewView: View {
     let onSourceChanged: @MainActor @Sendable (String) -> Void
     let onUndo: () -> Void
     let onRedo: () -> Void
-    let onToggleSplitView: () -> Void
+    let onToggleSourceAndPDF: () -> Void
     let onToggleDiff: (DocumentDiffMode) -> Void
     let onEndEditing: () -> Void
     let onDiscardEditing: () -> Void
@@ -48,10 +48,10 @@ struct LatexPreviewView: View {
                 onToggleOutline: { isOutlineVisible.toggle() },
                 editingSession: editingSession,
                 presentationMode: presentationMode,
-                supportsSplitView: true,
-                onToggleSplitView: onToggleSplitView,
                 diffSession: diffSession,
                 onToggleDiff: onToggleDiff,
+                onToggleSourceAndPDF: onToggleSourceAndPDF,
+                isSourceAndPDFActive: presentationMode == .split,
                 onUndo: onUndo,
                 onRedo: onRedo,
                 onDiscardEditing: onDiscardEditing,

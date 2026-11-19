@@ -37,17 +37,18 @@ struct TabBarView: View {
                 TabItemView(
                     tab: tab,
                     isSelected: model.activeTabID == tab.id,
-                    isDropTarget: dropTargetID == tab.id
+                    isDropTarget: dropTargetID == tab.id,
+                    isSplitPartner: model.splitPartnerID == tab.id
                 )
-                .draggable(tab.id) {
+                .draggable(TabDragItem(tabID: tab.id)) {
                     Text(tab.title)
                         .padding(.horizontal, BPTokens.Spacing.sm)
                         .padding(.vertical, BPTokens.Spacing.xs)
                         .background(BPTokens.Color.surface)
                         .clipShape(RoundedRectangle(cornerRadius: BPTokens.Radius.sm))
                 }
-                .dropDestination(for: String.self) { items, _ in
-                    guard let sourceID = items.first, sourceID != tab.id else { return false }
+                .dropDestination(for: TabDragItem.self) { items, _ in
+                    guard let sourceID = items.first?.tabID, sourceID != tab.id else { return false }
                     model.moveTab(id: sourceID, before: tab.id)
                     dropTargetID = nil
                     return true
@@ -71,8 +72,8 @@ struct TabBarView: View {
         .padding(.horizontal, BPTokens.Spacing.xs)
         .frame(maxHeight: .infinity)
         .contentShape(Rectangle())
-        .dropDestination(for: String.self) { items, _ in
-            guard let sourceID = items.first else { return false }
+        .dropDestination(for: TabDragItem.self) { items, _ in
+            guard let sourceID = items.first?.tabID else { return false }
             model.moveTabToEnd(id: sourceID)
             dropTargetID = nil
             return true
@@ -102,6 +103,7 @@ struct TabItemView: View {
     let tab: DocumentTab
     let isSelected: Bool
     let isDropTarget: Bool
+    let isSplitPartner: Bool
 
     var body: some View {
         HStack(spacing: BPTokens.Spacing.xxs) {
@@ -145,7 +147,7 @@ struct TabItemView: View {
                 .fill(Color.primary)
                 .frame(height: 1)
                 .padding(.horizontal, BPTokens.Spacing.xxs)
-                .opacity(isSelected ? 1 : 0)
+                .opacity(isSelected ? 1 : (isSplitPartner ? 0.4 : 0))
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }

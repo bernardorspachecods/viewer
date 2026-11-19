@@ -57,6 +57,27 @@ tags: [behavior, workspaces, tabs]
   tab, or drop a tab there to move it to the end. The first `Save` asks where to
   write the file. Unsaved untitled tabs are not restored after a restart.
 
+## Split view
+
+- Split View shows two document tabs of the workspace side by side, whatever their kind
+  (Markdown, LaTeX, PDF, JSON, CSV, image, Word). It replaced the old editor-plus-preview
+  split, which Markdown and JSON no longer have; LaTeX keeps its own `Source + PDF` button
+  (see [latex-and-pdf.md](/docs/behavior/latex-and-pdf.md)).
+- Enter it by dragging a tab onto the document area: the half where you release picks the
+  pane, and a highlight shows which. Or use the tab's context menu, `Open in Split View`,
+  which puts it in the right pane. Dropping a tab on a side replaces that pane; dropping the
+  tab that is in the other pane swaps the two.
+- Each pane is a complete tab: its own toolbar (icons only, to fit), outline, preview or
+  editor mode, and zoom. The tab bar shows which pane has focus: its tab has the full underline and the other
+  pane's tab a fainter one. Clicking a pane focuses it, and the header, zoom, search, Undo and Save act on it; search applies only to the
+  focused pane.
+- In the tab bar, selecting the other pane's tab moves focus to it; selecting any other tab
+  replaces the focused pane's tab.
+- Leave it with the `Split View` toolbar button (shown only while split) or by closing
+  either tab; the remaining tab fills the area. There are always two panes at most, side by
+  side, with a divider you can drag (each pane keeps at least 320 points).
+- The split is not restored after a restart, and a reader window (no tab bar) has none.
+
 ## Focus mode
 
 - The focus button in the header, and `⇧⌘F` (View > Focus Mode), show only the open

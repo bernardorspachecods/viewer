@@ -10,18 +10,41 @@ extension AppModel {
         previewZoom = tabs.first(where: { $0.id == activeTabID })?.previewZoom ?? 1.0
     }
 
+    /// Renders and watches every visible tab: the focused tab, and the split partner when split.
     func renderActiveTabIfNeeded() {
-        guard let activeTabID,
-              let tab = tabs.first(where: { $0.id == activeTabID }),
-              tab.kind == .markdown || tab.kind == .latex || tab.kind == .json || tab.kind == .csv || tab.kind == .pdf || tab.kind == .docx || tab.kind == .image else {
+        if let activeTabID {
+            renderTabIfNeeded(tabID: activeTabID, watchesAsPartner: false)
+        } else {
             stopWatchingActiveFiles()
+        }
+        if let splitPartnerID {
+            renderTabIfNeeded(tabID: splitPartnerID, watchesAsPartner: true)
+        } else {
+            stopWatchingPartnerFiles()
+        }
+    }
+
+    func renderTabIfNeeded(tabID: String, watchesAsPartner: Bool) {
+        func stopWatching() {
+            if watchesAsPartner {
+                stopWatchingPartnerFiles()
+            } else {
+                stopWatchingActiveFiles()
+            }
+        }
+        guard let tab = tabs.first(where: { $0.id == tabID }),
+              tab.kind == .markdown || tab.kind == .latex || tab.kind == .json || tab.kind == .csv || tab.kind == .pdf || tab.kind == .docx || tab.kind == .image else {
+            stopWatching()
             return
         }
 
-        startWatchingActiveFiles(
-            [tab.url, tab.editableSourceURL]
-                + tab.previewDependencies + tab.previewExternalDependencies
-        )
+        let watchedURLs = [tab.url, tab.editableSourceURL]
+            + tab.previewDependencies + tab.previewExternalDependencies
+        if watchesAsPartner {
+            startWatchingPartnerFiles(watchedURLs)
+        } else {
+            startWatchingActiveFiles(watchedURLs)
+        }
         let hasPreview: Bool
         switch tab.kind {
         case .markdown:
@@ -43,17 +66,17 @@ extension AppModel {
         }
         if !hasPreview || tab.status != .ready {
             if tab.kind == .markdown {
-                renderMarkdown(tabID: activeTabID)
+                renderMarkdown(tabID: tabID)
             } else if tab.kind == .latex {
-                renderLatex(tabID: activeTabID)
+                renderLatex(tabID: tabID)
             } else if tab.kind == .json {
-                renderJSON(tabID: activeTabID)
+                renderJSON(tabID: tabID)
             } else if tab.kind == .csv {
-                renderCSV(tabID: activeTabID)
+                renderCSV(tabID: tabID)
             } else if tab.kind == .pdf {
-                renderPDF(tabID: activeTabID)
+                renderPDF(tabID: tabID)
             } else if tab.kind == .image {
-                renderImage(tabID: activeTabID)
+                renderImage(tabID: tabID)
             }
         }
     }
@@ -113,20 +136,6 @@ extension AppModel {
             approvedLatexExternalPaths: [:],
             force: false
         ))
-    }
-
-    func scheduleMarkdownRender(tabID: String) {
-        markdownRenderDebounceTasks[tabID]?.cancel()
-        markdownRenderDebounceTasks[tabID] = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .milliseconds(180))
-            guard !Task.isCancelled, let self,
-                  let tab = self.tabs.first(where: { $0.id == tabID }),
-                  let session = tab.markdownEditSession,
-                  session.isEditing,
-                  session.mode == .split else { return }
-            self.renderMarkdown(tabID: tabID, sourceOverride: session.currentSource)
-            self.markdownRenderDebounceTasks[tabID] = nil
-        }
     }
 
     func refreshDocx(tabID: String) {
@@ -249,6 +258,11 @@ extension AppModel {
                     [tabs[index].url, tabs[index].editableSourceURL]
                         + output.dependencies + output.externalDependencies
                 )
+            } else if splitPartnerID == tabID {
+                restartWatchingPartnerFiles(
+                    [tabs[index].url, tabs[index].editableSourceURL]
+                        + output.dependencies + output.externalDependencies
+                )
             }
 
         case let .failed(tabID, failure):
@@ -283,6 +297,12 @@ extension AppModel {
             }
             if activeTabID == tabID {
                 restartWatchingActiveFiles(
+                    [tabs[index].url]
+                        + tabs[index].previewDependencies
+                        + tabs[index].previewExternalDependencies
+                )
+            } else if splitPartnerID == tabID {
+                restartWatchingPartnerFiles(
                     [tabs[index].url]
                         + tabs[index].previewDependencies
                         + tabs[index].previewExternalDependencies

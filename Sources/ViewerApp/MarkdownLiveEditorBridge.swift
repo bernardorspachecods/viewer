@@ -16,6 +16,12 @@ struct MarkdownLiveEditorBridge: NSViewRepresentable {
     let onFindFocus: @MainActor @Sendable () -> Void
     let onFindMatchCount: @MainActor @Sendable (Int) -> Void
     let onEndEditing: @MainActor @Sendable () -> Void
+    /// The reading position to show when the editor appears, and the zoom it is measured at.
+    let entryPosition: MarkdownReadingPosition?
+    let zoom: Double
+    let onViewportChanged: @MainActor @Sendable (MarkdownReadingPosition) -> Void
+    /// Called once the entry position is applied (or given up on), so the editor can be shown.
+    let onEntryApplied: @MainActor @Sendable () -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(bus: bus) }
 
@@ -34,6 +40,9 @@ struct MarkdownLiveEditorBridge: NSViewRepresentable {
         coordinator.onFindFocus = onFindFocus
         coordinator.onFindMatchCount = onFindMatchCount
         coordinator.onEndEditing = onEndEditing
+        coordinator.onViewportChanged = onViewportChanged
+        coordinator.onEntryApplied = onEntryApplied
+        coordinator.updateViewport(source: source, zoom: zoom, entryPosition: entryPosition)
         coordinator.applyCursor(source: source, offset: cursorUTF8Offset, requestID: cursorRequestID)
         coordinator.applyFind(
             source: source,
@@ -54,6 +63,9 @@ struct MarkdownLiveEditorBridge: NSViewRepresentable {
         var onFindFocus: @MainActor @Sendable () -> Void = {}
         var onFindMatchCount: @MainActor @Sendable (Int) -> Void = { _ in }
         var onEndEditing: @MainActor @Sendable () -> Void = {}
+        var onViewportChanged: @MainActor @Sendable (MarkdownReadingPosition) -> Void = { _ in }
+        var onEntryApplied: @MainActor @Sendable () -> Void = {}
+        let viewport = MarkdownLiveEditorViewportState()
 
         private var monitor: Any?
         private var resultsObserver: NSObjectProtocol?
@@ -79,6 +91,7 @@ struct MarkdownLiveEditorBridge: NSViewRepresentable {
         }
 
         func teardown() {
+            stopObservingScrolling()
             if let monitor { NSEvent.removeMonitor(monitor) }
             monitor = nil
             if let resultsObserver { NotificationCenter.default.removeObserver(resultsObserver) }
@@ -87,7 +100,7 @@ struct MarkdownLiveEditorBridge: NSViewRepresentable {
 
         // MARK: Locating the engine's text view
 
-        private func locateTextView() -> NSTextView? {
+        func locateTextView() -> NSTextView? {
             guard let bridgeView, let root = bridgeView.window?.contentView else { return nil }
             let center = bridgeView.convert(
                 NSPoint(x: bridgeView.bounds.midX, y: bridgeView.bounds.midY),

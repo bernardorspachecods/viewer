@@ -12,12 +12,15 @@ extension AppModel {
     }
 
     var documentTabSession: DocumentTabSession {
-        DocumentTabSession(tabs: tabs, activeTabID: activeTabID)
+        DocumentTabSession(tabs: tabs, activeTabID: activeTabID,
+                           splitPartnerID: splitPartnerID, activeSide: activeSide)
     }
 
     func applyDocumentTabSession(_ session: DocumentTabSession) {
         tabs = session.tabs
         activeTabID = session.activeTabID
+        splitPartnerID = session.splitPartnerID
+        activeSide = session.activeSide
     }
 
     func applyWorkspaceTreeState(_ state: WorkspaceTreeSession.State) {
@@ -94,14 +97,14 @@ extension AppModel {
     func closeTabsImmediately(_ ids: Set<String>) {
         let closingTabs = tabs.filter { ids.contains($0.id) }
         guard !closingTabs.isEmpty else { return }
-        let wasActive = activeTabID.map(ids.contains) == true
         documentRenderCoordinator.cancel(tabIDs: closingTabs.map(\.id))
+        let wasVisible = visibleTabIDs.contains(where: ids.contains)
         var session = documentTabSession
         for tab in closingTabs {
             _ = session.close(id: tab.id)
         }
         applyDocumentTabSession(session)
-        if wasActive {
+        if wasVisible {
             syncPreviewZoomToActiveTab()
             renderActiveTabIfNeeded()
         }

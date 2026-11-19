@@ -32,5 +32,26 @@ extension Runner {
             MarkdownEditorCursor.utf16Offset(inDisplay: source, forSourceUTF8Offset: 10_000, source: source) == nil,
             "editor cursor rejects an offset past the end"
         )
+
+        let table = "| a | b |\n| - | - |\n| alpha | 1 |\n"
+        let edited = "| a | b |\n| - | - |\n| alphaXY | 1 |\n"
+        let afterUndo = MarkdownEditorCursor.caretUTF8Offset(afterReplacing: edited, with: table)
+        expect(
+            afterUndo == (table as NSString).range(of: "alpha").upperBound,
+            "undo puts the caret at the end of the restored text, inside the table cell"
+        )
+        expect(
+            MarkdownEditorCursor.caretUTF8Offset(afterReplacing: table, with: edited)
+                == (edited as NSString).range(of: "alphaXY").upperBound,
+            "redo puts the caret at the end of the re-applied text"
+        )
+        expect(
+            MarkdownEditorCursor.caretUTF8Offset(afterReplacing: "a😀b", with: "a😀😀b") == "a😀😀".utf8.count,
+            "the caret after undo or redo is counted in UTF-8 bytes and never splits a character"
+        )
+        expect(
+            MarkdownEditorCursor.caretUTF8Offset(afterReplacing: "same", with: "same") == 4,
+            "an unchanged text puts the caret at its end"
+        )
     }
 }

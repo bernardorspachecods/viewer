@@ -7,12 +7,12 @@ extension PreviewPane {
             PDFPreviewView(
                 data: pdfData,
                 zoom: tab.previewZoom,
-                findQuery: model.findQuery,
+                findQuery: paneFindQuery,
                 findRequestID: model.findRequestID,
                 findBackwards: model.findBackwards,
-                isFindTarget: model.findTarget == .preview,
+                isFindTarget: isFocusedPane && model.findTarget == .preview,
                 onFindFocus: { model.setFindTarget(.preview) },
-                onFindMatchCount: model.setFindMatchCount,
+                onFindMatchCount: paneFindMatchCount,
                 pageIndex: tab.previewPageIndex,
                 readingPosition: tab.pdfReadingPosition,
                 onReadingPositionChanged: { position in
@@ -50,12 +50,12 @@ extension PreviewPane {
             url: tab.url,
             zoom: tab.previewZoom,
             previewRevision: tab.previewUpdatedAt,
-            findQuery: model.findQuery,
+            findQuery: paneFindQuery,
             findRequestID: model.findRequestID,
             findBackwards: model.findBackwards,
-            isFindTarget: model.findTarget == .preview,
+            isFindTarget: isFocusedPane && model.findTarget == .preview,
             onFindFocus: { model.setFindTarget(.preview) },
-            onFindMatchCount: model.setFindMatchCount,
+            onFindMatchCount: paneFindMatchCount,
             onZoomChanged: { value in
                 model.setPreviewZoomFromGesture(value)
             }

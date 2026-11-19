@@ -97,9 +97,6 @@ func togglesDocumentEditingModesDirectly() {
         )
     ]
 
-    model.toggleMarkdownSplitView(tabID: tabID)
-    #expect(model.tabs[0].markdownEditSession?.mode == .split)
-
     model.toggleDocumentDiff(mode: .savedOnDisk, tabID: tabID)
     #expect(model.tabs[0].markdownEditSession?.mode == .markdown)
     #expect(model.tabs[0].presentationMode == .diff(.savedOnDisk))
@@ -110,14 +107,6 @@ func togglesDocumentEditingModesDirectly() {
     #expect(model.tabs[0].markdownEditSession?.isEditing == true)
     #expect(model.tabs[0].markdownEditSession?.mode == .markdown)
 
-    model.toggleMarkdownSplitView(tabID: tabID)
-    #expect(model.tabs[0].presentationMode == .split)
-    #expect(model.tabs[0].diffSession == nil)
-
-    model.toggleDocumentDiff(mode: .gitHead, tabID: tabID)
-    #expect(model.tabs[0].markdownEditSession?.mode == .markdown)
-    #expect(model.tabs[0].presentationMode == .diff(.gitHead))
-    #expect(model.tabs[0].diffSession?.mode == .gitHead)
     model.toggleDocumentDiff(mode: .gitHead, tabID: tabID)
     #expect(model.tabs[0].diffSession == nil)
 }
@@ -172,11 +161,11 @@ func returnsToPreviewAfterClosingDiffOpenedFromPreview() {
     #expect(model.tabs[0].markdownEditSession!.isEditing == false)
 }
 
-@Test("restores editor and split modes after closing a diff")
+@Test("restores editor and LaTeX split modes after closing a diff")
 @MainActor
 func restoresEditorAndSplitModesAfterClosingDiff() {
     let editorTabID = "file:///tmp/project/editor-notes.md"
-    let splitTabID = "file:///tmp/project/split-notes.md"
+    let splitTabID = "file:///tmp/project/split-notes.tex"
     let model = AppModel()
     model.tabs = [
         DocumentTab(
@@ -190,12 +179,12 @@ func restoresEditorAndSplitModesAfterClosingDiff() {
         ),
         DocumentTab(
             id: splitTabID,
-            url: URL(fileURLWithPath: "/tmp/project/split-notes.md"),
-            kind: .markdown,
-            markdownEditSession: MarkdownEditSession(
+            url: URL(fileURLWithPath: "/tmp/project/split-notes.tex"),
+            kind: .latex,
+            latexEditSession: MarkdownEditSession(
                 mode: .split,
-                baseSource: "# Split",
-                currentSource: "# Split"
+                baseSource: "\\section{Split}",
+                currentSource: "\\section{Split}"
             )
         )
     ]
@@ -234,88 +223,6 @@ func keepsOriginalReturnModeWhenSwitchingDiffTypes() {
     model.toggleDocumentDiff(mode: .savedOnDisk, tabID: tabID)
     #expect(model.tabs[0].presentationMode == .preview)
     #expect(model.tabs[0].markdownEditSession?.isEditing != true)
-}
-
-@Test("saves Markdown from split view without leaving split view")
-@MainActor
-func savesMarkdownFromSplitViewWithoutLeavingSplitView() async throws {
-    let root = FileManager.default.temporaryDirectory
-        .appendingPathComponent("viewer-split-save-\(UUID().uuidString)", isDirectory: true)
-    let fileURL = root.appendingPathComponent("notes.md")
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    try "# Saved".write(to: fileURL, atomically: true, encoding: .utf8)
-    defer { try? FileManager.default.removeItem(at: root) }
-
-    let tabID = fileURL.path
-    let model = AppModel()
-    model.tabs = [
-        DocumentTab(
-            id: tabID,
-            url: fileURL,
-            kind: .markdown,
-            markdownSource: "# Draft",
-            markdownEditSession: MarkdownEditSession(
-                mode: .split,
-                baseSource: "# Saved",
-                currentSource: "# Draft",
-                saveState: .unsaved
-            )
-        )
-    ]
-
-    #expect(await model.saveMarkdownEditing(tabID: tabID))
-    #expect(try String(contentsOf: fileURL, encoding: .utf8) == "# Draft")
-    #expect(model.tabs[0].markdownEditSession?.isEditing == true)
-    #expect(model.tabs[0].markdownEditSession?.mode == .split)
-    #expect(model.tabs[0].presentationMode == .split)
-    #expect(model.tabs[0].markdownEditSession?.saveState == .saved)
-}
-
-@Test("returns to preview after closing a split view opened from preview")
-@MainActor
-func returnsToPreviewAfterClosingSplitViewOpenedFromPreview() {
-    let tabID = "file:///tmp/project/split-preview.md"
-    let model = AppModel()
-    model.tabs = [
-        DocumentTab(
-            id: tabID,
-            url: URL(fileURLWithPath: "/tmp/project/split-preview.md"),
-            kind: .markdown,
-            previewHTML: "<p>Preview</p>",
-            markdownSource: "# Notes"
-        )
-    ]
-
-    model.toggleMarkdownSplitView(tabID: tabID)
-    #expect(model.tabs[0].presentationMode == .split)
-
-    model.toggleMarkdownSplitView(tabID: tabID)
-    #expect(model.tabs[0].presentationMode == .preview)
-    #expect(model.tabs[0].markdownEditSession?.isEditing != true)
-}
-
-@Test("returns to the editor after closing a split view opened from the editor")
-@MainActor
-func returnsToEditorAfterClosingSplitViewOpenedFromEditor() {
-    let tabID = "file:///tmp/project/split-editor.md"
-    let model = AppModel()
-    model.tabs = [
-        DocumentTab(
-            id: tabID,
-            url: URL(fileURLWithPath: "/tmp/project/split-editor.md"),
-            kind: .markdown,
-            markdownEditSession: MarkdownEditSession(
-                baseSource: "# Notes",
-                currentSource: "# Notes"
-            )
-        )
-    ]
-
-    model.toggleMarkdownSplitView(tabID: tabID)
-    model.toggleMarkdownSplitView(tabID: tabID)
-
-    #expect(model.tabs[0].presentationMode == .source)
-    #expect(model.tabs[0].markdownEditSession?.isEditing == true)
 }
 
 @Test("discards Git changes and leaves Markdown in source mode")
@@ -446,4 +353,27 @@ func draftFlushSkipsTheMarkdownEditorAndFieldEditors() {
     let engine = NativeTextView()
     engine.isEditable = true
     #expect(!MarkdownDraftFlushPolicy.shouldFlush(from: engine))
+}
+
+@Test("undo and redo ask the editor to keep the caret where the change was")
+@MainActor
+func undoAndRedoRequestTheCaretAtTheChange() {
+    let coordinator = DocumentEditCoordinator()
+    let before = "| a |\n| - |\n| alpha |\n"
+    let after = "| a |\n| - |\n| alphaXY |\n"
+    let session = MarkdownEditSession(
+        baseSource: before,
+        currentSource: after,
+        undoSources: [before]
+    )
+
+    let undone = coordinator.undoMarkdown(session: session)?.session
+    #expect(undone?.currentSource == before)
+    #expect(undone?.caretRequest?.utf8Offset == ("| a |\n| - |\n| alpha" as NSString).length)
+    #expect(undone?.caretRequest?.serial == 1)
+
+    let redone = undone.flatMap { coordinator.redoMarkdown(session: $0)?.session }
+    #expect(redone?.currentSource == after)
+    #expect(redone?.caretRequest?.utf8Offset == ("| a |\n| - |\n| alphaXY" as NSString).length)
+    #expect(redone?.caretRequest?.serial == 2)
 }

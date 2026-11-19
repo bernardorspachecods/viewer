@@ -25,11 +25,10 @@ extension AppModel {
     }
 
     /// The `Markdown Editor` toolbar button: opens the editor, or leaves it the way `Esc` does.
-    /// Split view and diffs are their own modes, so the button is not offered there.
+    /// Diffs are their own mode, so the button is not offered there.
     func toggleMarkdownEditor(tabID: String) {
         guard let index = tabs.firstIndex(where: { $0.id == tabID }),
               tabs[index].kind == .markdown,
-              tabs[index].presentationMode != .split,
               tabs[index].diffSession == nil else { return }
         if tabs[index].markdownEditSession?.isEditing == true {
             endMarkdownEditing(tabID: tabID)
@@ -59,9 +58,6 @@ extension AppModel {
               ) else { return }
 
         applyMarkdownTransition(transition, at: index)
-        if transition.session.mode == .split {
-            scheduleMarkdownRender(tabID: tabID)
-        }
     }
 
     func endMarkdownEditing(tabID: String) {
@@ -92,36 +88,6 @@ extension AppModel {
         await saveMarkdownEdit(tabID: tabID)
     }
 
-    func toggleMarkdownSplitView(tabID: String) {
-        guard let index = tabs.firstIndex(where: { $0.id == tabID }) else { return }
-        guard tabs[index].markdownEditSession?.isEditing == true else {
-            let returnMode = tabs[index].presentationMode
-            beginMarkdownEditing(tabID: tabID, mode: .split)
-            tabs[index].markdownEditSession?.splitReturnMode = returnMode
-            return
-        }
-
-        if tabs[index].presentationMode == .split {
-            let returnMode = tabs[index].markdownEditSession?.splitReturnMode ?? .source
-            let modeAfterClosing = returnMode == .preview && hasUnsavedChanges(in: tabs[index])
-                ? .source
-                : returnMode
-            tabs[index].selectPresentationMode(modeAfterClosing)
-            tabs[index].markdownEditSession?.splitReturnMode = nil
-            if modeAfterClosing == .preview {
-                renderMarkdown(tabID: tabID)
-            }
-            return
-        }
-
-        let returnMode = tabs[index].markdownEditSession?.splitReturnMode ?? .source
-        tabs[index].markdownEditSession?.splitReturnMode = returnMode
-        tabs[index].selectPresentationMode(.split)
-        if let session = tabs[index].markdownEditSession {
-            renderMarkdown(tabID: tabID, sourceOverride: session.currentSource)
-        }
-    }
-
     @discardableResult
     func undoMarkdownEdit() -> Bool {
         guard let tabID = activeTabID,
@@ -131,9 +97,6 @@ extension AppModel {
 
         markdownUndoGroupTimes[tabID] = nil
         applyMarkdownTransition(transition, at: index)
-        if transition.session.mode == .split {
-            scheduleMarkdownRender(tabID: tabID)
-        }
         return true
     }
 
@@ -146,9 +109,6 @@ extension AppModel {
 
         markdownUndoGroupTimes[tabID] = nil
         applyMarkdownTransition(transition, at: index)
-        if transition.session.mode == .split {
-            scheduleMarkdownRender(tabID: tabID)
-        }
         return true
     }
 

@@ -37,12 +37,12 @@ struct DocumentInteractionToolbar: View {
     let onToggleOutline: () -> Void
     let editingSession: MarkdownEditSession?
     let presentationMode: DocumentPresentationMode
-    let supportsSplitView: Bool
-    let onToggleSplitView: (() -> Void)?
     let diffSession: DocumentDiffSession?
     let onToggleDiff: (DocumentDiffMode) -> Void
     var onToggleMarkdownEditor: (() -> Void)? = nil
     var isMarkdownEditorActive: Bool = false
+    var onToggleSourceAndPDF: (() -> Void)? = nil
+    var isSourceAndPDFActive: Bool = false
     let onUndo: () -> Void
     let onRedo: () -> Void
     let onDiscardEditing: () -> Void
@@ -73,12 +73,22 @@ struct DocumentInteractionToolbar: View {
                     )
                 }
 
-                if supportsSplitView, let onToggleSplitView {
+                if model.isSplit {
                     DocumentEditModeButton(
                         title: "Split View",
                         systemImage: "rectangle.split.2x1",
-                        isActive: presentationMode == .split,
-                        action: onToggleSplitView
+                        isActive: true,
+                        action: { model.closeSplit() }
+                    )
+                    .help("Close the split view and show one document")
+                }
+
+                if let onToggleSourceAndPDF {
+                    DocumentEditModeButton(
+                        title: "Source + PDF",
+                        systemImage: "rectangle.split.2x1",
+                        isActive: isSourceAndPDFActive,
+                        action: onToggleSourceAndPDF
                     )
                 }
 
@@ -282,10 +292,12 @@ struct ResizableDocumentOutlineView: View {
     let onSelect: (DocumentOutlineItem) -> Void
     let onChanged: (Double) -> Void
     let onEnded: (Double) -> Void
+    /// The width of the pane the outline sits in while it is narrow (a Split View pane); nil otherwise.
+    var paneWidth: Double?
     @State private var liveWidth: Double?
 
     private var displayedWidth: Double {
-        liveWidth ?? DocumentOutlineSizing.clamped(width)
+        liveWidth ?? DocumentOutlineSizing.displayed(preferred: width, paneWidth: paneWidth)
     }
 
     var body: some View {

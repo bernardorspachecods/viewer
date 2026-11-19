@@ -57,10 +57,20 @@ final class DocumentEditCoordinator {
         var updated = session
         updated.undoSources.removeLast()
         updated.redoSources.append(updated.currentSource)
+        updated.caretRequest = caretRequest(from: session, to: previous)
         updated.currentSource = previous
         updated.saveState = .unsaved
         updated.conflict = nil
         return transition(session: updated, source: previous)
+    }
+
+    /// Undo and redo replace the whole draft; the caret goes to the end of what changed, so the
+    /// user keeps typing inside the table, list or style that was just restored.
+    private func caretRequest(from session: MarkdownEditSession, to restored: String) -> SourceCaretRequest {
+        SourceCaretRequest(
+            utf8Offset: MarkdownEditorCursor.caretUTF8Offset(afterReplacing: session.currentSource, with: restored),
+            serial: (session.caretRequest?.serial ?? 0) + 1
+        )
     }
 
     func redoMarkdown(session: MarkdownEditSession) -> DocumentEditTransition? {
@@ -68,6 +78,7 @@ final class DocumentEditCoordinator {
         var updated = session
         updated.redoSources.removeLast()
         updated.undoSources.append(updated.currentSource)
+        updated.caretRequest = caretRequest(from: session, to: next)
         updated.currentSource = next
         updated.saveState = .unsaved
         updated.conflict = nil

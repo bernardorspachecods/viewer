@@ -32,6 +32,10 @@ final class AppModel: ObservableObject {
     @Published var nodes: [FileNode] = []
     @Published var tabs: [DocumentTab] = []
     @Published var activeTabID: String?
+    /// The tab in the non-focused pane while split. nil when not split.
+    @Published var splitPartnerID: String?
+    /// The side of the focused tab while split.
+    @Published var activeSide: DocumentSplitSide = .leading
     @Published var treeQuery = ""
     @Published var showSelectedFilesOnly = true
     /// File kinds shown by "Show selected files only", mirrored from the shared session.
@@ -108,6 +112,9 @@ final class AppModel: ObservableObject {
     lazy var activeDocumentWatcher = ActiveDocumentWatcher { [weak self] change in
         self?.handleActiveDocumentChange(change)
     }
+    lazy var partnerDocumentWatcher = ActiveDocumentWatcher { [weak self] change in
+        self?.handleActiveDocumentChange(change)
+    }
     var pendingOpenURLs: [URL] = []
     private var openFilesObserver: NSObjectProtocol?
     private var terminationObserver: NSObjectProtocol?
@@ -118,7 +125,6 @@ final class AppModel: ObservableObject {
     var fileOperationTask: Task<Void, Never>?
     var gitDiscardTask: Task<Void, Never>?
     var latexRenderDebounceTasks: [String: Task<Void, Never>] = [:]
-    var markdownRenderDebounceTasks: [String: Task<Void, Never>] = [:]
     var markdownUndoGroupTimes: [String: TimeInterval] = [:]
     var activeSecurityScopedRootURL: URL?
     private weak var attachedWindow: NSWindow?

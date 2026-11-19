@@ -316,6 +316,9 @@ extension AppModel {
         if let activeTabID, let relocatedActiveID = relocatedIDs[activeTabID] {
             self.activeTabID = relocatedActiveID
         }
+        if let splitPartnerID, let relocatedPartnerID = relocatedIDs[splitPartnerID] {
+            self.splitPartnerID = relocatedPartnerID
+        }
         restartWatchingActiveFilesIfNeeded()
     }
 

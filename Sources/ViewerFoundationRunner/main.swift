@@ -36,6 +36,7 @@ struct Runner {
         runMarkdownMergeContracts()
         runMarkdownRenderContracts()
         runMarkdownCodeAndTableContracts()
+        runMarkdownStyleContracts()
         runMarkdownImageAndMathContracts()
         runMarkdownHTMLAndFrontMatterContracts()
         runMarkdownLinkContracts()

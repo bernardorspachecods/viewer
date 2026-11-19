@@ -351,17 +351,42 @@ func togglesTheMarkdownEditor() throws {
     #expect(model.activeTab?.markdownEditSession?.isEditing != true)
 }
 
-@Test("the Markdown editor button does nothing in split view")
-@MainActor
-func markdownEditorButtonIgnoresSplitView() throws {
-    let model = AppModel()
-    model.createNewMarkdownDocument()
-    let tab = try #require(model.activeTab)
-    model.toggleMarkdownSplitView(tabID: tab.id)
-    #expect(model.activeTab?.presentationMode == .split)
+@Test("split presentation is only for LaTeX; Markdown and JSON sessions stay in source mode")
+func splitPresentationIsOnlyForLatex() {
+    let markdownTab = DocumentTab(
+        id: "file:///tmp/project/split.md",
+        url: URL(fileURLWithPath: "/tmp/project/split.md"),
+        kind: .markdown,
+        markdownEditSession: MarkdownEditSession(
+            mode: .split,
+            baseSource: "# Notes",
+            currentSource: "# Notes"
+        )
+    )
+    #expect(markdownTab.presentationMode == .source)
 
-    model.toggleMarkdownEditor(tabID: tab.id)
+    var sourceTab = DocumentTab(
+        id: "file:///tmp/project/split.md",
+        url: URL(fileURLWithPath: "/tmp/project/split.md"),
+        kind: .markdown,
+        markdownEditSession: MarkdownEditSession(
+            baseSource: "# Notes",
+            currentSource: "# Notes"
+        )
+    )
+    sourceTab.selectPresentationMode(.split)
+    #expect(sourceTab.markdownEditSession?.mode == .markdown)
+    #expect(sourceTab.presentationMode == .source)
 
-    #expect(model.activeTab?.presentationMode == .split)
-    #expect(model.activeTab?.markdownEditSession?.isEditing == true)
+    let latexTab = DocumentTab(
+        id: "file:///tmp/project/split.tex",
+        url: URL(fileURLWithPath: "/tmp/project/split.tex"),
+        kind: .latex,
+        latexEditSession: MarkdownEditSession(
+            mode: .split,
+            baseSource: "\\section{A}",
+            currentSource: "\\section{A}"
+        )
+    )
+    #expect(latexTab.presentationMode == .split)
 }

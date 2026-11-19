@@ -78,6 +78,14 @@ struct WorkspaceContextMenuModifier: ViewModifier {
                 fileActions
                 Divider()
             }
+            if model.activeTabID != tab.id {
+                Button {
+                    model.enterSplit(dropping: tab.id, on: .trailing)
+                } label: {
+                    Label("Open in Split View", systemImage: "rectangle.split.2x1")
+                }
+                Divider()
+            }
             Button {
                 model.closeTab(tab)
             } label: {

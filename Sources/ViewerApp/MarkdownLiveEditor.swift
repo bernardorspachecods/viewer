@@ -3,6 +3,7 @@ import MarkdownEngine
 import MarkdownEngineCodeBlocks
 import MarkdownEngineLatex
 import SwiftUI
+import ViewerCore
 
 /// The Markdown editor: swift-markdown-engine's live-styled TextKit 2 editor, bound to the
 /// draft (`MarkdownEditSession.currentSource`). The raw `SourceTextView` stays only in the diffs.
@@ -21,13 +22,18 @@ struct MarkdownLiveEditor: View {
     let onFindMatchCount: @MainActor @Sendable (Int) -> Void
     let onSourceChanged: @MainActor @Sendable (String) -> Void
     let onEndEditing: @MainActor @Sendable () -> Void
+    /// Where the document was scrolled in the preview, so the editor opens at the same text and
+    /// height; the editor reports its own scroll through `onViewportChanged`.
+    let entryPosition: MarkdownReadingPosition?
+    let onViewportChanged: @MainActor @Sendable (MarkdownReadingPosition) -> Void
 
     @State private var isFocused = true
+    /// Hidden until the entry position is applied, so the editor never shows its first lines for a
+    /// frame before it scrolls to where the preview was.
+    @State private var isRevealed = false
     /// One bus and configuration per editor: the engine listens to its bus names on the whole
     /// app, so a shared name would send ⌘B or a find to every open editor in every window.
     @State private var session = MarkdownLiveEditorSession()
-
-    private static let baseFontSize: CGFloat = 16
 
     var body: some View {
         NativeTextViewWrapper(
@@ -37,13 +43,15 @@ struct MarkdownLiveEditor: View {
                     if newValue != source { onSourceChanged(newValue) }
                 }
             ),
-            configuration: session.configuration(limitsTextWidth: limitsTextWidth),
-            fontSize: Self.baseFontSize * zoom,
+            configuration: session.configuration(limitsTextWidth: limitsTextWidth, zoom: zoom),
+            fontSize: CGFloat(MarkdownStyleTokens.shared.scaled(by: zoom).bodyFontSize),
             documentId: documentID,
             isFocused: $isFocused
         )
-        // The reading column is fixed when the editor is built, so a changed preference rebuilds it.
-        .id(limitsTextWidth)
+        .opacity(isRevealed || entryPosition?.sourceOffset == nil ? 1 : 0)
+        // The reading column and the spacing are fixed when the editor is built, so a changed
+        // preference or zoom rebuilds it.
+        .id("\(limitsTextWidth)-\(zoom)")
         .background(
             MarkdownLiveEditorBridge(
                 bus: session.bus,
@@ -56,7 +64,11 @@ struct MarkdownLiveEditor: View {
                 isFindTarget: isFindTarget,
                 onFindFocus: onFindFocus,
                 onFindMatchCount: onFindMatchCount,
-                onEndEditing: onEndEditing
+                onEndEditing: onEndEditing,
+                entryPosition: entryPosition,
+                zoom: zoom,
+                onViewportChanged: onViewportChanged,
+                onEntryApplied: { isRevealed = true }
             )
         )
         .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
@@ -68,10 +80,6 @@ struct MarkdownLiveEditor: View {
 /// engine configuration that carries them.
 @MainActor
 final class MarkdownLiveEditorSession {
-    private static let readingWidth: CGFloat = 760
-    private static let horizontalInset: CGFloat = 56
-    private static let verticalInset: CGFloat = 20
-
     let bus: MarkdownLiveEditorBus
     private let baseConfiguration: MarkdownEditorConfiguration
 
@@ -83,18 +91,17 @@ final class MarkdownLiveEditorSession {
             latex: SwiftMathBridge(),
             bus: bus.engineBus
         )
-        // Without insets the text touches the pane edge when the pane is narrower than the
-        // reading column (split view).
-        configuration.textInsets = TextInsets(horizontal: Self.horizontalInset, vertical: Self.verticalInset)
         self.bus = bus
         self.baseConfiguration = configuration
     }
 
     /// The text runs to the pane edges unless a reading column is asked for.
-    func configuration(limitsTextWidth: Bool) -> MarkdownEditorConfiguration {
-        var configuration = baseConfiguration
-        configuration.readingWidth = limitsTextWidth ? Self.readingWidth : nil
-        return configuration
+    func configuration(limitsTextWidth: Bool, zoom: Double) -> MarkdownEditorConfiguration {
+        MarkdownLiveEditorStyle.configuration(
+            base: baseConfiguration,
+            tokens: MarkdownStyleTokens.shared.scaled(by: zoom),
+            limitsTextWidth: limitsTextWidth
+        )
     }
 }
 

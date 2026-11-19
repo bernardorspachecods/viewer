@@ -1,6 +1,6 @@
 ---
 bkf: document
-description: "User-visible Markdown behavior: the rendered preview, links between files, the Markdown editor with its live styling, split view, and the limits of math and of the editor."
+description: "User-visible Markdown behavior: the rendered preview, links between files, the Markdown editor with its live styling, and the limits of math and of the editor."
 tags: [behavior, markdown]
 ---
 
@@ -61,21 +61,31 @@ Shared editing rules (drafts, saving, conflicts, diffs) are in
 ## Markdown editor
 
 - The preview is read-only. Double-clicking it does nothing. Editing starts only
-  with the `Markdown Editor` toolbar button (or `Split View`), and the editor
-  replaces the preview. The button is hidden in split view and while a diff is open.
+  with the `Markdown Editor` toolbar button, and the editor replaces the preview.
+  The button is hidden while a diff is open.
 - Clicking the button again, `Esc`, and `Save` all leave editing and save the draft,
   as every editable format does (see
   [editing-and-diff.md](/docs/behavior/editing-and-diff.md)).
 - The editor styles the Markdown while you type (headings, emphasis, lists, quotes,
   tables, task checkboxes, code with syntax highlighting, and TeX math), but the text
   it edits is the Markdown source itself. Its text width follows the Markdown Text Width setting.
+- The editor and the rendered preview share one style definition, so the same Markdown
+  looks the same in both: typography, headings, links, lists, task boxes, quotes, tables,
+  code colors, and inline comments (shown as a muted chip with only the note text). What
+  cannot match is listed in [rendering.md](/docs/technical/rendering.md).
+- Switching between the preview and the editor, in either direction, keeps the same text at
+  the same height, and the new view appears already scrolled there (no frame at the top of the
+  document). Positions near the end of a document are clamped to what the other view can
+  scroll to; other known differences are in [rendering.md](/docs/technical/rendering.md).
+- Undo and redo replace the whole draft and put the caret at the end of the text they changed,
+  so you keep typing inside the table cell, list item or style you were in.
 - Undo and redo act on the draft, `⌘B`, `⌘I`, and `⌘K` apply bold, italic, and inline
   code, and Return continues or ends a list.
 - Spell correction is on. The app's own inline word completion (Apple Foundation
   model and local dictionary) is not part of this editor.
 - Picking a heading in the outline while editing moves the caret to it.
-- The editor can fill the whole area or use split view: editor on the left, live
-  preview on the right.
+- The editor fills the whole pane. Showing two files side by side is Split View, which is
+  between tabs (see [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md#split-view)).
 - The engine is the third-party `swift-markdown-engine`, pinned to one revision (see
   [ui-architecture.md](/docs/technical/ui-architecture.md)).
 

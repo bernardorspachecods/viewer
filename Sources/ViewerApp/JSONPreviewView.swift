@@ -39,8 +39,6 @@ struct JSONPreviewView: View {
                 onToggleOutline: {},
                 editingSession: editingSession,
                 presentationMode: presentationMode,
-                supportsSplitView: false,
-                onToggleSplitView: nil,
                 diffSession: diffSession,
                 onToggleDiff: onToggleDiff,
                 onUndo: onUndo,

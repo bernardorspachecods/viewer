@@ -43,6 +43,10 @@ struct MarkdownWebView: NSViewRepresentable {
 
         configuration.userContentController.addUserScript(Self.textWidthScript(limitsTextWidth: limitsTextWidth))
         context.coordinator.limitsTextWidth = limitsTextWidth
+        let messageHandler = MarkdownReadingPositionMessageHandler()
+        messageHandler.coordinator = context.coordinator
+        configuration.userContentController.add(messageHandler, name: Coordinator.readingPositionMessageName)
+        configuration.userContentController.addUserScript(Self.scrollReportingScript)
 
         let webView = FindTrackingWKWebView(frame: .zero, configuration: configuration)
         webView.onFindFocus = onFindFocus
@@ -56,6 +60,7 @@ struct MarkdownWebView: NSViewRepresentable {
     static func dismantleNSView(_ webView: WKWebView, coordinator: Coordinator) {
         coordinator.captureReadingPosition(in: webView)
         coordinator.removeScrollObservation()
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: Coordinator.readingPositionMessageName)
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
@@ -90,6 +95,7 @@ struct MarkdownWebView: NSViewRepresentable {
             || context.coordinator.previewRevision != previewRevision
         if documentChanged {
             let isSameDocument = context.coordinator.documentID == documentID
+            let isFirstLoad = context.coordinator.html == nil
             let currentScrollY = webView.enclosingScrollView.map {
                 max(Double($0.contentView.bounds.origin.y), 0)
             }
@@ -98,7 +104,9 @@ struct MarkdownWebView: NSViewRepresentable {
                 MarkdownReadingPosition(
                     scrollY: scrollY,
                     anchorID: knownPosition?.anchorID,
-                    anchorOffset: knownPosition?.anchorOffset ?? 0
+                    anchorOffset: knownPosition?.anchorOffset ?? 0,
+                    sourceOffset: knownPosition?.sourceOffset,
+                    blockTop: knownPosition?.blockTop ?? 0
                 )
             }
             context.coordinator.pendingReadingPosition = isSameDocument
@@ -109,6 +117,9 @@ struct MarkdownWebView: NSViewRepresentable {
             context.coordinator.html = html
             context.coordinator.baseURL = baseURL
             context.coordinator.isDocumentLoaded = false
+            // A new web view stays hidden until `didFinish` has scrolled to the position, so it
+            // never shows its top first. Reloads of a page already on screen keep showing it.
+            if isFirstLoad, context.coordinator.pendingReadingPosition != nil { webView.alphaValue = 0 }
             webView.loadHTMLString(html, baseURL: baseURL)
         }
 
@@ -130,6 +141,12 @@ struct MarkdownWebView: NSViewRepresentable {
         }
     }
 
+    private static let scrollReportingScript = WKUserScript(
+        source: Coordinator.scrollReportingScript,
+        injectionTime: .atDocumentEnd,
+        forMainFrameOnly: true
+    )
+
     private static func textWidthScript(limitsTextWidth: Bool) -> WKUserScript {
         WKUserScript(
             source: TextWidthPreference.previewScript(limitsTextWidth: limitsTextWidth),
@@ -145,6 +162,7 @@ struct MarkdownWebView: NSViewRepresentable {
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
         controller.addUserScript(Self.textWidthScript(limitsTextWidth: limitsTextWidth))
+        controller.addUserScript(Self.scrollReportingScript)
         webView.evaluateJavaScript(TextWidthPreference.previewScript(limitsTextWidth: limitsTextWidth), completionHandler: nil)
     }
 

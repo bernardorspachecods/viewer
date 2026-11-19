@@ -31,6 +31,14 @@ entry when it is closed; do not keep history.
 
 These were verified by build, runners and tests only.
 
+- Split View between two tabs (2026-11-19): opening it from the tab context menu, moving
+  focus, replacing a pane and closing it were driven in a test copy of the app. Not checked:
+  dragging a tab onto the document area (whether the custom drag type reaches the drop
+  target over a web view or the editor, and the highlight), and a real click on a pane
+  moving focus (the click tracker is covered by a unit test only). Also not checked: a PDF,
+  LaTeX or CSV pane next to a Markdown one, and file changes on disk while a pane is not
+  focused.
+
 - The Markdown editor (`MarkdownLiveEditor`) was driven in the real app on
   2026-11-19 (reader window, split view, find, `⌘A`+`⌘B`, `⌘Z`, `Esc` save, Disk Diff
   with the old editor, a `/MAP.md` link opening the root file). Not checked yet: the

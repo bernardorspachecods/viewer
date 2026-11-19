@@ -97,21 +97,46 @@ extension MarkdownWebView {
             }
         }
 
+        /// An expression that evaluates to the current reading position: scroll, the heading at the
+        /// top, and the Markdown block at the top (by source offset) with its top edge's height.
+        static let readingPositionScript = """
+        (() => {
+            const scrollY = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            const headings = Array.from(document.querySelectorAll('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]'));
+            const anchor = headings.find((element) => element.getBoundingClientRect().bottom >= 0) || headings.at(-1);
+            const blocks = Array.from(document.querySelectorAll('.bp-document-content > [data-bp-source-offset]'));
+            const block = blocks.find((element) => element.getBoundingClientRect().bottom > 1) || blocks.at(-1);
+            return {
+                scrollY,
+                anchorID: anchor ? anchor.id : null,
+                anchorOffset: anchor ? anchor.getBoundingClientRect().top : 0,
+                sourceOffset: block ? Number(block.dataset.bpSourceOffset) : null,
+                blockTop: block ? block.getBoundingClientRect().top : 0
+            };
+        })()
+        """
+
+        /// Posts the reading position to the app on every scroll, so it is current whatever scrolled
+        /// the page and even when the page is about to be replaced.
+        static let scrollReportingScript = """
+        (() => {
+            let pending = null;
+            const report = () => {
+                pending = null;
+                window.webkit.messageHandlers.\(readingPositionMessageName).postMessage(\(readingPositionScript));
+            };
+            window.addEventListener('scroll', () => {
+                if (pending === null) { pending = setTimeout(report, 40); }
+            }, { passive: true });
+        })();
+        """
+
+        static let readingPositionMessageName = "bpReadingPosition"
+
         func captureReadingPosition(in webView: WKWebView) {
             guard isDocumentLoaded else { return }
             webView.evaluateJavaScript(
-                """
-                (() => {
-                    const scrollY = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
-                    const headings = Array.from(document.querySelectorAll('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]'));
-                    const anchor = headings.find((element) => element.getBoundingClientRect().bottom >= 0) || headings.at(-1);
-                    return {
-                        scrollY,
-                        anchorID: anchor ? anchor.id : null,
-                        anchorOffset: anchor ? anchor.getBoundingClientRect().top : 0
-                    };
-                })()
-                """,
+                Self.readingPositionScript,
                 completionHandler: { [weak self] result, _ in
                     guard let self,
                           let payload = result as? [String: Any] else { return }
@@ -120,21 +145,37 @@ extension MarkdownWebView {
                     self.publishReadingPosition(
                         scrollY: scrollY,
                         anchorID: payload["anchorID"] as? String,
-                        anchorOffset: anchorOffset
+                        anchorOffset: anchorOffset,
+                        sourceOffset: (payload["sourceOffset"] as? NSNumber)?.intValue,
+                        blockTop: (payload["blockTop"] as? NSNumber)?.doubleValue ?? 0
                     )
                 }
+            )
+        }
+
+        func receiveReadingPosition(_ payload: [String: Any]) {
+            publishReadingPosition(
+                scrollY: (payload["scrollY"] as? NSNumber)?.doubleValue ?? 0,
+                anchorID: payload["anchorID"] as? String,
+                anchorOffset: (payload["anchorOffset"] as? NSNumber)?.doubleValue ?? 0,
+                sourceOffset: (payload["sourceOffset"] as? NSNumber)?.intValue,
+                blockTop: (payload["blockTop"] as? NSNumber)?.doubleValue ?? 0
             )
         }
 
         func publishReadingPosition(
             scrollY: Double,
             anchorID: String?,
-            anchorOffset: Double
+            anchorOffset: Double,
+            sourceOffset: Int? = nil,
+            blockTop: Double = 0
         ) {
             let position = MarkdownReadingPosition(
                 scrollY: max(scrollY, 0),
                 anchorID: anchorID,
-                anchorOffset: anchorOffset
+                anchorOffset: anchorOffset,
+                sourceOffset: sourceOffset,
+                blockTop: blockTop
             )
             guard lastReadingPosition != position else { return }
             lastReadingPosition = position
@@ -149,29 +190,58 @@ extension MarkdownWebView {
             }
         }
 
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            webView.alphaValue = 1
+        }
+
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            webView.alphaValue = 1
+        }
+
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             isDocumentLoaded = true
             if let pendingReadingPosition {
-                restoreReadingPosition(pendingReadingPosition, in: webView)
+                restoreReadingPosition(pendingReadingPosition, in: webView) { [weak webView] in
+                    webView?.alphaValue = 1
+                }
                 self.pendingReadingPosition = nil
+            } else {
+                webView.alphaValue = 1
             }
             scrollToPendingAnchors(in: webView)
             find(in: webView, updateMatchCount: true)
             scheduleCapture(of: webView)
         }
 
-        func restoreReadingPosition(_ position: MarkdownReadingPosition, in webView: WKWebView) {
+        /// Scrolls to the position and then calls `completion`, so the page can be shown only once it
+        /// is where the user left it.
+        func restoreReadingPosition(
+            _ position: MarkdownReadingPosition,
+            in webView: WKWebView,
+            completion: @escaping () -> Void = {}
+        ) {
             guard let encodedID = try? String(
                 data: JSONEncoder().encode(position.anchorID),
                 encoding: .utf8
             ),
             let scrollY = String(position.scrollY).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
             let anchorOffset = String(position.anchorOffset).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+                completion()
                 return
             }
 
             let script = """
             (() => {
+                const sourceOffset = \(position.sourceOffset.map(String.init) ?? "null");
+                if (sourceOffset !== null) {
+                    const blocks = Array.from(document.querySelectorAll('.bp-document-content > [data-bp-source-offset]'));
+                    const block = blocks.filter((element) => Number(element.dataset.bpSourceOffset) <= sourceOffset).at(-1);
+                    if (block) {
+                        const top = window.scrollY + block.getBoundingClientRect().top - \(position.blockTop);
+                        window.scrollTo(0, Math.max(0, top));
+                        return;
+                    }
+                }
                 const fallback = \(scrollY);
                 const anchor = \(encodedID) ? document.getElementById(\(encodedID)) : null;
                 if (!anchor) {
@@ -182,7 +252,7 @@ extension MarkdownWebView {
                 window.scrollTo(0, Math.max(0, desiredTop));
             })();
             """
-            webView.evaluateJavaScript(script, completionHandler: nil)
+            webView.evaluateJavaScript(script) { _, _ in completion() }
         }
 
         func scrollToPendingAnchors(in webView: WKWebView) {
@@ -279,5 +349,16 @@ extension MarkdownWebView {
             onNavigate?(resolvedURL)
             decisionHandler(.cancel)
         }
+    }
+}
+
+/// Receives the page's scroll reports without keeping the coordinator alive: the web view's
+/// configuration retains its message handlers.
+final class MarkdownReadingPositionMessageHandler: NSObject, WKScriptMessageHandler {
+    weak var coordinator: MarkdownWebView.Coordinator?
+
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard let payload = message.body as? [String: Any] else { return }
+        MainActor.assumeIsolated { coordinator?.receiveReadingPosition(payload) }
     }
 }

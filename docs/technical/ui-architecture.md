@@ -89,7 +89,15 @@ that produces it. Module boundaries and coordination are in
   Edit > Undo fall through to the engine's own undo. `⌘S` and `⌘Z` do not copy the
   engine's text into the draft: that text is display text, and the binding already carries
   the storage text (`MarkdownDraftFlushPolicy`). The shared search bar sits on the tab surface and
-  follows focus between editor and preview in split view.
+  follows focus between the two panes in Split View.
+- Split View is state of `DocumentTabSession` (Core): `activeTabID` stays the focused pane,
+  `splitPartnerID` is the other pane's tab and `activeSide` says which side the focused tab is
+  on, so every active-tab behavior (zoom, search, save, header) works on the focused pane
+  unchanged. Selecting the partner swaps focus without moving a pane. `AppModel` renders and
+  watches both visible tabs (a second `ActiveDocumentWatcher` for the partner). A tab is
+  dragged as `TabDragItem`, a custom type, because web views and text editors accept plain
+  strings and would swallow the drop; a local mouse-down monitor (`PaneFocusTracker`) moves
+  focus on a click without consuming it. The split is not persisted.
 - Raw editing and diff: JSON, LaTeX source, and the diff use one shared AppKit
   editor, which draws the line gutter and the Git-style decorations. The diff uses
   one view for Markdown and JSON. Both sides use the same per-line height map, so

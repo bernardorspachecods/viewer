@@ -23,10 +23,8 @@ struct MarkdownPreviewView: View {
     let onToggleMarkdownEditor: () -> Void
     let onUndo: () -> Void
     let onRedo: () -> Void
-    let onToggleSplitView: () -> Void
     let onToggleDiff: (DocumentDiffMode) -> Void
     let onEndMarkdownEditing: () -> Void
-    let onSaveMarkdownEditing: () -> Void
     let onDiscardMarkdownEditing: () -> Void
     let onDiscardGitChanges: @MainActor @Sendable () -> Void
     let onKeepLocalMarkdownEdit: () -> Void
@@ -74,11 +72,9 @@ struct MarkdownPreviewView: View {
                 onToggleOutline: { isOutlineVisible.toggle() },
                 editingSession: editingSession,
                 presentationMode: presentationMode,
-                supportsSplitView: true,
-                onToggleSplitView: onToggleSplitView,
                 diffSession: diffSession,
                 onToggleDiff: onToggleDiff,
-                onToggleMarkdownEditor: presentationMode == .split || diffSession != nil
+                onToggleMarkdownEditor: diffSession != nil
                     ? nil
                     : onToggleMarkdownEditor,
                 isMarkdownEditorActive: isMarkdownEditorActive,
@@ -96,31 +92,36 @@ struct MarkdownPreviewView: View {
                 )
             }
 
-            HStack(spacing: 0) {
-                outlineSurface
-                documentSurface
+            GeometryReader { proxy in
+                HStack(spacing: 0) {
+                    outlineSurface(paneWidth: model.isSplit ? Double(proxy.size.width) : nil)
+                    documentSurface
+                }
+                .animation(MarkdownOutlineLayout.animation, value: isOutlineVisible)
             }
-            .animation(MarkdownOutlineLayout.animation, value: isOutlineVisible)
         }
         .id(documentID)
+        .onChange(of: editingSession?.caretRequest) { _, request in
+            // Undo and redo replace the whole draft; keep the caret where the change was.
+            guard let request else { return }
+            pendingCursorUTF8Offset = request.utf8Offset
+            outlineRequestID += 1
+        }
         .onExitCommand(perform: exitEditing)
     }
 
     private var isMarkdownEditorActive: Bool {
-        editingSession != nil && presentationMode != .split
+        editingSession != nil
     }
 
     private var exitEditing: () -> Void {
         if let diffSession {
             return { onToggleDiff(diffSession.mode) }
         }
-        if editingSession?.mode == .split {
-            return onSaveMarkdownEditing
-        }
         return onEndMarkdownEditing
     }
 
-    private var outlineSurface: some View {
+    private func outlineSurface(paneWidth: Double?) -> some View {
         ResizableDocumentOutlineView(
             isVisible: isOutlineVisible,
             width: outlineWidth,
@@ -136,12 +137,13 @@ struct MarkdownPreviewView: View {
                 }
             },
             onChanged: onOutlineWidthChanged,
-            onEnded: { _ in onOutlineWidthChangeEnded() }
+            onEnded: { _ in onOutlineWidthChangeEnded() },
+            paneWidth: paneWidth
         )
     }
 
-    // The preview is the reading surface; editing replaces it with the Markdown editor, and
-    // split view shows both. Diffs keep their own raw editor (`DocumentDiffView`).
+    // The preview is the reading surface; editing replaces it with the Markdown editor.
+    // Diffs keep their own raw editor (`DocumentDiffView`).
     @ViewBuilder
     private var documentSurface: some View {
         if let editingSession, let diffSession {
@@ -171,15 +173,7 @@ struct MarkdownPreviewView: View {
                 onDiscardGitChanges: onDiscardGitChanges
             )
         } else if let editingSession {
-            if editingSession.mode == .split {
-                ResizableSplitView {
-                    markdownEditor(editingSession: editingSession)
-                } trailing: {
-                    previewSurface
-                }
-            } else {
-                markdownEditor(editingSession: editingSession)
-            }
+            markdownEditor(editingSession: editingSession)
         } else {
             previewSurface
         }
@@ -200,13 +194,9 @@ struct MarkdownPreviewView: View {
             onFindFocus: { onFindTargetChanged(.source) },
             onFindMatchCount: onFindMatchCount,
             onSourceChanged: onMarkdownTextChanged,
-            onEndEditing: {
-                if editingSession.mode == .split {
-                    onSaveMarkdownEditing()
-                } else {
-                    onEndMarkdownEditing()
-                }
-            }
+            onEndEditing: onEndMarkdownEditing,
+            entryPosition: readingPosition,
+            onViewportChanged: onReadingPositionChanged
         )
     }
 

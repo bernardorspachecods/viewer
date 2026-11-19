@@ -87,7 +87,7 @@ final class DocumentRenderCoordinator {
     private var generations: [String: Int] = [:]
 
     init(
-        markdownAdapter: any MarkdownAdapter = SwiftMarkdownAdapter(),
+        markdownAdapter: any MarkdownAdapter = SwiftMarkdownAdapter(codeHighlighter: MarkdownPreviewCodeHighlighter.shared),
         latexRenderCache: LatexRenderCache = LatexRenderCache(),
         onEvent: @escaping (DocumentRenderEvent) -> Void
     ) {

@@ -14,10 +14,9 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0"),
         .package(url: "https://github.com/apple/swift-testing.git", from: "0.6.0"),
-        .package(
-            url: "https://github.com/nodes-app/swift-markdown-engine",
-            revision: "ca0d9798b0e18a590840b366295f5a686c9c3daf"
-        )
+        // Vendored copy of nodes-app/swift-markdown-engine at ca0d979, patched for Viewer's shared
+        // Markdown style. See Vendor/swift-markdown-engine/viewer-patches.md.
+        .package(path: "Vendor/swift-markdown-engine")
     ],
     targets: [
         .target(
