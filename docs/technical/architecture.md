@@ -7,13 +7,13 @@ tags: [architecture, swift]
 # Technical architecture
 
 Module contents are listed by the member maps: [Sources/MAP.md](/Sources/MAP.md),
-[BPViewerApp](/Sources/BPViewerApp/MAP.md), and [BPViewerCore](/Sources/BPViewerCore/MAP.md).
+[ViewerApp](/Sources/ViewerApp/MAP.md), and [ViewerCore](/Sources/ViewerCore/MAP.md).
 This document holds the rules that span them.
 
 ## Core and App boundary
 
-- Logic that needs no UI framework belongs in `Sources/BPViewerCore/`. The
-  `Sources/BPViewerApp/` target holds macOS integration and observable state.
+- Logic that needs no UI framework belongs in `Sources/ViewerCore/`. The
+  `Sources/ViewerApp/` target holds macOS integration and observable state.
 - Core is UI-independent so the executable runners can exercise the same logic the
   app uses, without a window. See [verification.md](/docs/technical/verification.md).
 

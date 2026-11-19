@@ -3,7 +3,7 @@
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "$0")/.." && pwd)"
-app_binary="$repo_root/.build/debug/BPViewer"
+app_binary="$repo_root/.build/debug/Viewer"
 app_pid=""
 
 snapshot() {
@@ -24,12 +24,12 @@ stop_app() {
 
 build_and_start() {
     stop_app
-    print "[bp-viewer] a compilar…"
-    if ! (cd "$repo_root" && swift build --product BPViewer); then
-        print -u2 "[bp-viewer] build failed; the app will restart when a new change is detected"
+    print "[viewer] a compilar…"
+    if ! (cd "$repo_root" && swift build --product Viewer); then
+        print -u2 "[viewer] build failed; the app will restart when a new change is detected"
         return 1
     fi
-    print "[bp-viewer] starting the app"
+    print "[viewer] starting the app"
     "$app_binary" &
     app_pid=$!
 }
@@ -39,7 +39,7 @@ trap stop_app EXIT INT TERM
 last_snapshot="$(snapshot)"
 build_and_start || exit 1
 
-print "[bp-viewer] development mode active; changes in Sources/ restart the app"
+print "[viewer] development mode active; changes in Sources/ restart the app"
 
 while true; do
     sleep 1

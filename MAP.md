@@ -42,11 +42,11 @@ Structural rules for code and documents are in [AGENTS.md](/AGENTS.md). How to d
 - [check-file-size.sh](/scripts/check-file-size.sh) enforces the 500-line limit on Swift files in `Sources/` and `Tests/`; over-limit files are pinned in `scripts/file-size-baseline.json`, and a pin can only go down (`--update` lowers it).
 - [check.sh](/scripts/check.sh) runs every check that works on this machine (build, both runners, size limits, `bkf validate`, `swift test`) and stops at the first failure.
 - [check-function-size.sh](/scripts/check-function-size.sh) enforces the 150-line limit on Swift function, method, init, and computed property bodies in `Sources/` and `Tests/`; over-limit functions are pinned by file and name in `scripts/function-size-baseline.json`, and a pin can only go down (`--update` lowers it).
-- [install-app.sh](/scripts/install-app.sh) builds the release app and installs it in `/Applications` or `BP_VIEWER_INSTALL_DIR`.
-- [BPViewer-Info.plist](/Resources/BPViewer-Info.plist) supplies macOS app bundle metadata.
-- [BPViewer.icns](/Resources/BPViewer.icns) is the app icon.
-- [BPViewer-logo.svg](/Resources/BPViewer-logo.svg) is the vector app logo.
-- [MarkdownAdapterTests.swift](/Tests/BPViewerAppTests/MarkdownAdapterTests.swift) contains package tests for the Markdown adapter and preview; the other app tests sit beside it in `Tests/BPViewerAppTests/`, one file per topic.
+- [install-app.sh](/scripts/install-app.sh) builds the release app and installs it in `/Applications` or `VIEWER_INSTALL_DIR`.
+- [Viewer-Info.plist](/Resources/Viewer-Info.plist) supplies macOS app bundle metadata.
+- [Viewer.icns](/Resources/Viewer.icns) is the app icon.
+- [Viewer-logo.svg](/Resources/Viewer-logo.svg) is the vector app logo.
+- [MarkdownAdapterTests.swift](/Tests/ViewerAppTests/MarkdownAdapterTests.swift) contains package tests for the Markdown adapter and preview; the other app tests sit beside it in `Tests/ViewerAppTests/`, one file per topic.
 
 `.build/`, `.swiftpm/`, and `DerivedData/` hold generated build or package state, not durable context.
 

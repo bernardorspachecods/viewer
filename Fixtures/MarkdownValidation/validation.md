@@ -8,7 +8,7 @@ tags: [fixtures, markdown, validation]
 
 This fixture covers rendering a local SVG image, common TeX notation, and a remote image.
 
-- Start the app with `swift run BPViewer`.
+- Start the app with `swift run Viewer`.
 - Select the repository folder as the root, then open [`01-local-and-math.md`](/Fixtures/MarkdownValidation/01-local-and-math.md).
 - Confirm that the blue `LOCAL SVG` diagram appears, and that it has loaded from the relative path `images/local-diagram.svg`.
 - Confirm the inline expressions render as MathML rather than literal dollar delimiters: `E = mc²`, `1/2`, and the Greek/index expression.

@@ -3,7 +3,7 @@
 This fixture verifies that the preview retains and attempts to load a remote
 image when an internet connection is available.
 
-![Remote test image](https://placehold.co/640x160/png?text=bp-viewer+remote "Remote image")
+![Remote test image](https://placehold.co/640x160/png?text=viewer+remote "Remote image")
 
 ## Expected result
 

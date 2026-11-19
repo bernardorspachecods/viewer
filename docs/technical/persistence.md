@@ -11,7 +11,7 @@ What users see survive a restart is in
 document covers how it is stored.
 
 - Persisted state is a `Codable` model with a `schemaVersion`, in
-  `Sources/BPViewerCore/SessionStateModels.swift`. Changes to it must keep older state
+  `Sources/ViewerCore/SessionStateModels.swift`. Changes to it must keep older state
   loading.
 - Storage is JSON in `UserDefaults`. Only `WorkspaceSessionCoordinator` reads and
   writes it.

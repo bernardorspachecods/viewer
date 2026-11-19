@@ -17,12 +17,12 @@ that produces it. Module boundaries and coordination are in
   column and the document column. The header is a single row and never wraps.
   Its content rules are in [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
 - The document column holds the tab bar and one surface per document kind. Preview
-  and editor views are chosen by document kind; the views live in `Sources/BPViewerApp/`.
+  and editor views are chosen by document kind; the views live in `Sources/ViewerApp/`.
 - Overlays (outline, diff, settings, errors, root selection, permissions, and
   workspace switching) are presented by the app layer, not by the preview views.
 - Snapshots use a separate AppKit window.
 - Focus mode hides the header, the sidebar, and the tab bar. The visibility rule is
-  the pure `WindowChromeLayout` in `Sources/BPViewerApp/WindowChromeLayout.swift`,
+  the pure `WindowChromeLayout` in `Sources/ViewerApp/WindowChromeLayout.swift`,
   read through `AppModel.chromeLayout` by `RootView` and `DocumentWorkspaceView`.
   The sidebar flag is not written while focus mode is on, so exiting restores it.
   `RootView` also overlays `FocusExitButton` while focus mode is on, because the header
@@ -33,7 +33,7 @@ that produces it. Module boundaries and coordination are in
   applies it in AppKit: `titleVisibility`, `titlebarAppearsTransparent`,
   `.fullSizeContentView`, the three standard window buttons, and
   `isMovableByWindowBackground`. The decisions are the pure `FocusWindowChromePlan` in
-  `Sources/BPViewerApp/FocusWindowChromePlan.swift`, which also holds the state to
+  `Sources/ViewerApp/FocusWindowChromePlan.swift`, which also holds the state to
   restore: the title bar as it was before focus mode, saved once and written back on
   exit. The window title is not touched, so it stays correct after exit.
 - The native tab strip is a title bar accessory the system adds to each window of the
@@ -44,9 +44,9 @@ that produces it. Module boundaries and coordination are in
   the title bar change and checked again on the next run-loop turn, and it also runs on
   `NSWindow.didBecomeKeyNotification`.
 - The sync removes its observers on `NSWindow.willCloseNotification`.
-- Keyboard shortcuts are defined once, in `AppShortcuts` (`Sources/BPViewerCore/AppShortcutCatalog.swift`).
+- Keyboard shortcuts are defined once, in `AppShortcuts` (`Sources/ViewerCore/AppShortcutCatalog.swift`).
   The menu commands bind the single-key ones through `appShortcut`
-  (`Sources/BPViewerApp/AppShortcut+Menu.swift`), and the Settings Shortcuts tab
+  (`Sources/ViewerApp/AppShortcut+Menu.swift`), and the Settings Shortcuts tab
   (`ShortcutsSettingsView.swift`) lists the same values. Shortcuts handled by a view or a
   global monitor are listed there too, but bound where they are handled.
   Esc exits focus mode through `.onExitCommand` on the root view: SwiftUI delivers it
@@ -61,7 +61,7 @@ that produces it. Module boundaries and coordination are in
   and routes global commands to the active window. Each model's window presentation
   (`WindowPresentation`: workspace, standalone, or reader) is set once, at creation.
 - `AppModel` is the observable object for one workspace. It publishes the state the
-  surfaces render; the published properties are in `Sources/BPViewerApp/AppModel.swift`.
+  surfaces render; the published properties are in `Sources/ViewerApp/AppModel.swift`.
 - Render, edit, and diff requests go to their coordinators. The results come back as
   events that `AppModel` applies.
 - Settings changes also go through `AppModel`.
@@ -89,5 +89,5 @@ that produces it. Module boundaries and coordination are in
 - PDF: local links go to the app's router; external links go to the browser.
 - Images and Word: image reads go through the render coordinator (see
   [rendering.md](/docs/technical/rendering.md)).
-- Terminal reply capture is a separate engine in `Sources/BPViewerApp/TerminalReader/`;
+- Terminal reply capture is a separate engine in `Sources/ViewerApp/TerminalReader/`;
   see [terminal-reader.md](/docs/technical/terminal-reader.md).

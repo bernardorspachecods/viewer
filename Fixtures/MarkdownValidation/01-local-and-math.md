@@ -1,7 +1,7 @@
 # Markdown validation: local image and mathematics
 
 This fixture validates a relative local image and common mathematical notation
-in the `bp-viewer` preview. Open the file from the `Fixtures/MarkdownValidation`
+in the `viewer` preview. Open the file from the `Fixtures/MarkdownValidation`
 directory.
 
 ## Local image

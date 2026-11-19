@@ -3,13 +3,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "bp-viewer",
+    name: "viewer",
     platforms: [
         .macOS(.v26)
     ],
     products: [
-        .executable(name: "BPViewer", targets: ["BPViewerApp"]),
-        .library(name: "BPViewerCore", targets: ["BPViewerCore"])
+        .executable(name: "Viewer", targets: ["ViewerApp"]),
+        .library(name: "ViewerCore", targets: ["ViewerCore"])
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0"),
@@ -17,39 +17,39 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "BPViewerCore",
+            name: "ViewerCore",
             dependencies: [
                 .product(name: "Markdown", package: "swift-markdown")
             ],
             exclude: ["MAP.md"]
         ),
         .executableTarget(
-            name: "BPViewerApp",
-            dependencies: ["BPViewerCore"],
+            name: "ViewerApp",
+            dependencies: ["ViewerCore"],
             exclude: ["MAP.md"]
         ),
         .testTarget(
-            name: "BPViewerAppTests",
+            name: "ViewerAppTests",
             dependencies: [
-                "BPViewerApp",
-                "BPViewerCore",
+                "ViewerApp",
+                "ViewerCore",
                 .product(name: "Testing", package: "swift-testing")
             ]
         ),
         .executableTarget(
-            name: "BPViewerContractRunner",
-            dependencies: ["BPViewerCore"]
+            name: "ViewerContractRunner",
+            dependencies: ["ViewerCore"]
         ),
         .executableTarget(
-            name: "BPViewerFoundationRunner",
-            dependencies: ["BPViewerCore"]
+            name: "ViewerFoundationRunner",
+            dependencies: ["ViewerCore"]
         ),
         .executableTarget(
-            name: "BPViewerTabPrototype",
+            name: "ViewerTabPrototype",
             dependencies: []
         ),
         .executableTarget(
-            name: "BPViewerWindowTabPrototype",
+            name: "ViewerWindowTabPrototype",
             dependencies: []
         )
     ]

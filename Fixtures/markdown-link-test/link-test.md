@@ -1,7 +1,7 @@
 # Markdown link test
 
 Use this page to confirm that the app distinguishes web links from local files
-that are not previewed by BP Viewer.
+that are not previewed by Viewer.
 
 ## Links externos
 
@@ -16,7 +16,7 @@ Both should open in the macOS default browser.
 - [Open CSV](data.csv)
 
 These should open in the macOS default app without creating a preview tab in
-BP Viewer.
+Viewer.
 
 ## Checklist
 

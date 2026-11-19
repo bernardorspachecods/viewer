@@ -39,7 +39,7 @@ user-visible behavior, the owner document keeps the rule; the comment keeps the 
 
 ## Pointing to code
 
-Point to a folder (`Sources/BPViewerCore/`), not to a function, type, or property. Name a
+Point to a folder (`Sources/ViewerCore/`), not to a function, type, or property. Name a
 file only when the rule cannot be understood without it, such as the file that owns a
 compatibility key. Lists of files and types describe the code and do not belong in a
 document; the member maps already list them.

@@ -19,7 +19,7 @@ description: "Manual validation fixtures for Markdown, link, and LaTeX previews:
 | --- | --- |
 | Manual checks for the Markdown preview's local and remote images, common TeX mathematics, and local image updates; the fixture files are test inputs. | [validation.md](/Fixtures/MarkdownValidation/validation.md) |
 | Manual LaTeX preview check and standalone compilation procedure for a multi-page document with a TikZ include and BibTeX bibliography. | [validation.md](/Fixtures/latex-preview-test/validation.md) |
-| Describes the manual link navigation fixture and its web, text, and CSV targets, which should open outside a BP Viewer preview tab. | [validation.md](/Fixtures/markdown-link-test/validation.md) |
+| Describes the manual link navigation fixture and its web, text, and CSV targets, which should open outside a Viewer preview tab. | [validation.md](/Fixtures/markdown-link-test/validation.md) |
 <!-- BKF:GENERATED-MEMBER-INVENTORY:END -->
 
 ## Artifact references

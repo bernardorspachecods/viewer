@@ -16,11 +16,11 @@
   linkcolor=accent,
   urlcolor=accent,
   citecolor=accent,
-  pdftitle={Fixture LaTeX para teste do bp-viewer},
-  pdfauthor={bp-viewer}
+  pdftitle={Fixture LaTeX para teste do viewer},
+  pdfauthor={viewer}
 }
 
-\title{Fixture LaTeX para teste do bp-viewer}
+\title{Fixture LaTeX para teste do viewer}
 \author{Documento de validação manual}
 \date{\today}
 
@@ -40,7 +40,7 @@ matemática, tabela, listas, links, uma figura vetorial local incluída por
 \section{Como usar este documento}
 \label{sec:como-usar}
 
-O ficheiro principal é \texttt{main.tex}. Abra-o no bp-viewer e confirme que a
+O ficheiro principal é \texttt{main.tex}. Abra-o no viewer e confirme que a
 compilação termina, que o PDF ocupa uma escala legível e que o scroll mantém a
 posição. Este parágrafo contém texto contínuo suficiente para testar seleção,
 cópia e pesquisa. Procure, por exemplo, a expressão \emph{invariante de
@@ -102,7 +102,7 @@ uma fórmula destacada.
   \label{tab:cenarios}
   \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.4cm}p{7.6cm}c@{}}
     \toprule
-    Elemento & O que observar no bp-viewer & Prioridade \\
+    Elemento & O que observar no viewer & Prioridade \\
     \midrule
     Índice & Entradas clicáveis e hierarquia de secções & Alta \\
     Referências & \verb|\eqref|, \verb|\ref| e \verb|\pageref| & Alta \\
@@ -175,7 +175,7 @@ forma razoável. Também há pontuação, números 12345 e identificadores como
 
 Este fixture não é uma tese e não pretende cobrir engines que não estão
 instaladas. O objetivo é fornecer um documento previsível para a primeira
-ronda manual do bp-viewer. Deve ser possível abrir o root, ver o índice,
+ronda manual do viewer. Deve ser possível abrir o root, ver o índice,
 navegar entre pelo menos quatro páginas, pesquisar texto, selecionar conteúdo,
 seguir referências, observar a figura e confirmar a bibliografia.
 
@@ -186,7 +186,7 @@ uma falha recuperável, introduza temporariamente um comando inválido em
 ``Tentar novamente''.
 
 O resultado esperado é um preview PDF válido, com a bibliografia abaixo e sem
-ficheiros auxiliares escritos na pasta raw pelo bp-viewer.
+ficheiros auxiliares escritos na pasta raw pelo viewer.
 
 \clearpage
 \addcontentsline{toc}{section}{Referências}

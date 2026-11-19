@@ -19,7 +19,7 @@ tags: [behavior, sidebar, file-tree]
   folder stays when it contains a shown file. Turning it off shows all files.
 - Selecting a file opens or focuses its tab when the app supports its type. Other
   files open in the macOS default app.
-- The supported types are defined in the code under `Sources/BPViewerCore/`. Each
+- The supported types are defined in the code under `Sources/ViewerCore/`. Each
   type's behavior is in its own document (see the [documentation map](/docs/MAP.md)).
 
 ## Search

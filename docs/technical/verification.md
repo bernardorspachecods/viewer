@@ -16,14 +16,14 @@ The script runs these steps in order and stops at the first failure, printing th
 failing step's last output and a summary. It exits 1 on any failure:
 
 1. `swift build`
-2. `swift run BPViewerContractRunner`: Markdown adapter, LaTeX discovery and render
+2. `swift run ViewerContractRunner`: Markdown adapter, LaTeX discovery and render
    contracts, process pipeline.
-3. `swift run BPViewerFoundationRunner`: filesystem, tree, file kinds, tabs,
+3. `swift run ViewerFoundationRunner`: filesystem, tree, file kinds, tabs,
    persistence, Markdown editing and merge, JSON, CSV, zoom, folder collapse.
 4. `scripts/check-file-size.sh` and `scripts/check-function-size.sh`: the 500-line
    and 150-line structural limits, with their shrink-only baselines.
 5. `bkf validate .` and `bkf validate repo-library` in `repo-library/`.
-6. `swift test`: the app test target in `Tests/BPViewerAppTests/`.
+6. `swift test`: the app test target in `Tests/ViewerAppTests/`.
 
 The runners' roles are in [Sources/MAP.md](/Sources/MAP.md).
 

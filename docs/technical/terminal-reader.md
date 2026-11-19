@@ -17,7 +17,7 @@ asks the app to show it. It runs in the App target because it depends on AppKit,
 Carbon hot keys, and the Accessibility API. It is separate from the workspace
 code, which owns every window.
 
-Code lives in `Sources/BPViewerApp/TerminalReader/`:
+Code lives in `Sources/ViewerApp/TerminalReader/`:
 
 | File | Responsibility |
 | --- | --- |
@@ -30,7 +30,7 @@ Code lives in `Sources/BPViewerApp/TerminalReader/`:
 | `TerminalReplyWindowHost.swift` | The app's side of the boundary: which window receives the reply. |
 
 The pure rules have no AppKit dependency. They live in
-`Sources/BPViewerCore/TerminalReplyRules.swift`: terminal bundle identifiers,
+`Sources/ViewerCore/TerminalReplyRules.swift`: terminal bundle identifiers,
 client detection from window text, copy-picker detection, and reply file naming
 with its numeric suffix.
 

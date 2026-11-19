@@ -9,7 +9,7 @@ tags: [architecture, filesystem, watchers]
 ## Scanning
 
 - The tree is scanned lazily: the top level first, and children when a folder is
-  expanded. Scanning code is in `Sources/BPViewerCore/` (filesystem foundation).
+  expanded. Scanning code is in `Sources/ViewerCore/` (filesystem foundation).
 - Filtering by file kind is per file. A folder is shown when it contains a shown
   file. Hidden files are skipped unless the workspace's hidden-files state is on.
 - Search and the selected-files filter may need a full index of the workspace.

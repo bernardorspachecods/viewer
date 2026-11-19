@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs every check that works on this machine, in order:
-#   swift build, BPViewerContractRunner, BPViewerFoundationRunner,
+#   swift build, ViewerContractRunner, ViewerFoundationRunner,
 #   file and function size limits, bkf validate (repo and repo-library), swift test.
 #
 # Stops at the first failing step, prints the step's last output lines and a
@@ -58,8 +58,8 @@ summary() {
 }
 
 run_step "swift build" swift build
-run_step "BPViewerContractRunner" swift run BPViewerContractRunner
-run_step "BPViewerFoundationRunner" swift run BPViewerFoundationRunner
+run_step "ViewerContractRunner" swift run ViewerContractRunner
+run_step "ViewerFoundationRunner" swift run ViewerFoundationRunner
 run_step "file size limit" scripts/check-file-size.sh
 run_step "function size limit" scripts/check-function-size.sh
 run_step "bkf validate ." bkf validate .

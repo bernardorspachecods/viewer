@@ -6,7 +6,7 @@ tags: [fixtures, latex, validation]
 
 # LaTeX preview validation
 
-Open [`main.tex`](/Fixtures/latex-preview-test/main.tex) in bp-viewer. The document should produce multiple pages and includes a table of contents, cross-references, an equation, a table, lists, links, a TikZ diagram included from [`fixture-diagram.tex`](/Fixtures/latex-preview-test/fixture-diagram.tex), and a BibTeX bibliography in [`references.bib`](/Fixtures/latex-preview-test/references.bib).
+Open [`main.tex`](/Fixtures/latex-preview-test/main.tex) in viewer. The document should produce multiple pages and includes a table of contents, cross-references, an equation, a table, lists, links, a TikZ diagram included from [`fixture-diagram.tex`](/Fixtures/latex-preview-test/fixture-diagram.tex), and a BibTeX bibliography in [`references.bib`](/Fixtures/latex-preview-test/references.bib).
 
 To validate outside the app, from this folder:
 

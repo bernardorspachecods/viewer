@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Resources/BPViewer-logo.svg" alt="Viewer open-pages logo" width="112">
+  <img src="Resources/Viewer-logo.svg" alt="Viewer open-pages logo" width="112">
 </p>
 
 <h1 align="center">Viewer</h1>
@@ -33,7 +33,7 @@ Package Manager:
 ```sh
 git clone https://github.com/bernardorspachecods/bp-viewer.git
 cd bp-viewer
-swift run BPViewer
+swift run Viewer
 ```
 
 For development, `./scripts/dev-run.sh` watches `Sources/` and rebuilds when
@@ -60,15 +60,15 @@ The LaTeX toolchain is installed separately and is not included with Viewer.
 The contract runners exercise core behavior without opening a window:
 
 ```sh
-swift run BPViewerContractRunner
-swift run BPViewerFoundationRunner
+swift run ViewerContractRunner
+swift run ViewerFoundationRunner
 ```
 
 To include your own LaTeX project in the contract run, set
-`BP_VIEWER_LATEX_CORPUS` to its folder. The project must contain `main.tex`:
+`VIEWER_LATEX_CORPUS` to its folder. The project must contain `main.tex`:
 
 ```sh
-BP_VIEWER_LATEX_CORPUS=/path/to/project swift run BPViewerContractRunner
+VIEWER_LATEX_CORPUS=/path/to/project swift run ViewerContractRunner
 ```
 
 ## License
