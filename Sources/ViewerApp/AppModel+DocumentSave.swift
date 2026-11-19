@@ -81,7 +81,6 @@ extension AppModel {
         tabs[index].markdownEditSession?.conflict = nil
         tabs[index].markdownEditSession?.isEditing = !finishEditing
         if finishEditing {
-            tabs[index].markdownEditSession?.isPreviewInline = false
             tabs[index].diffSession = nil
         }
         if activeTabID == oldID {
@@ -150,7 +149,6 @@ extension AppModel {
             tabs[index].errorMessage = nil
             if finishEditing {
                 tabs[index].markdownEditSession?.isEditing = false
-                tabs[index].markdownEditSession?.isPreviewInline = false
                 tabs[index].diffSession = nil
             }
             if renderWhenNotEditing && tabs[index].markdownEditSession?.isEditing != true {

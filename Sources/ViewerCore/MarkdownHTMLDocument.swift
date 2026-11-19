@@ -39,7 +39,7 @@ struct MarkdownHTMLDocument {
               min-width: 0;
               max-width: none;
               margin: 0;
-              padding: 40px 52px 80px;
+              padding: 40px clamp(20px, 5vw, 64px) 80px;
               color: -apple-system-label;
               background: -apple-system-background;
               font: -apple-system-body;
@@ -49,7 +49,7 @@ struct MarkdownHTMLDocument {
               box-sizing: border-box;
               width: 100%;
               min-width: 0;
-              max-width: 860px;
+              max-width: var(--bp-content-max, 860px);
               margin: 0 auto;
             }
             .bp-document-content > * {
@@ -138,7 +138,43 @@ struct MarkdownHTMLDocument {
             table td:first-child {
               border-left: 1px solid color-mix(in srgb, currentColor 20%, transparent);
             }
-            .bp-special-placeholder { cursor: pointer; border: 1px dashed color-mix(in srgb, currentColor 28%, transparent); border-radius: 6px; padding: 10px; color: -apple-system-secondary-label; white-space: pre-wrap; }
+            .bp-special-placeholder {
+              cursor: pointer;
+              margin: 0.8em 0;
+              padding: 8px 12px;
+              border-radius: 6px;
+              background: color-mix(in srgb, currentColor 5%, transparent);
+              color: -apple-system-secondary-label;
+              font-size: 0.82em;
+              line-height: 1.5;
+              white-space: pre-wrap;
+              overflow-wrap: anywhere;
+            }
+            span.bp-special-placeholder { display: inline; margin: 0; padding: 0.1em 0.4em; font-size: 0.85em; }
+            span.bp-special-placeholder { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+            .bp-html-block::before, .bp-front-matter-text::before {
+              display: block;
+              margin-bottom: 4px;
+              font: -apple-system-caption2;
+              font-weight: 600;
+              letter-spacing: 0.06em;
+              text-transform: uppercase;
+              opacity: 0.8;
+            }
+            .bp-html-block::before { content: "HTML"; }
+            .bp-front-matter-text::before { content: "Front matter"; }
+            .bp-front-matter {
+              margin: 0 0 1.6em;
+              padding: 10px 14px;
+              border-radius: 8px;
+              background: color-mix(in srgb, currentColor 5%, transparent);
+              color: -apple-system-secondary-label;
+              font-size: 0.85em;
+              line-height: 1.45;
+            }
+            .bp-front-matter dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 16px; margin: 0; }
+            .bp-front-matter dt { font-weight: 600; color: -apple-system-label; opacity: 0.75; }
+            .bp-front-matter dd { margin: 0; overflow-wrap: anywhere; }
             .math-inline {
               display: inline-block;
               max-width: 100%;

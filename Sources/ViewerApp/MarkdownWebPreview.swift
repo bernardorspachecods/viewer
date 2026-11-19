@@ -16,9 +16,8 @@ struct MarkdownWebView: NSViewRepresentable {
     let baseURL: URL
     let documentID: String
     let previewRevision: Date?
-    let canBeginEditing: Bool
     let onNavigate: (URL) -> Void
-    let onMarkdownEditEvent: (MarkdownWebEditEvent) -> Void
+    let limitsTextWidth: Bool
     let zoom: Double
     let findQuery: String
     let findRequestID: Int
@@ -33,9 +32,6 @@ struct MarkdownWebView: NSViewRepresentable {
     let onAnchorRequestApplied: (UUID) -> Void
     let readingPosition: MarkdownReadingPosition?
     let onReadingPositionChanged: (MarkdownReadingPosition) -> Void
-    let isQuickEditEnabled: Bool
-    let quickEditFocus: (blockID: String, offset: Int, requestID: Int)?
-    let onQuickEditFocusApplied: () -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -44,14 +40,9 @@ struct MarkdownWebView: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
-        configuration.userContentController.addUserScript(
-            WKUserScript(
-                source: MarkdownEditingJavaScript.source,
-                injectionTime: .atDocumentEnd,
-                forMainFrameOnly: true
-            )
-        )
-        configuration.userContentController.add(context.coordinator, name: "viewerMarkdownEdit")
+
+        configuration.userContentController.addUserScript(Self.textWidthScript(limitsTextWidth: limitsTextWidth))
+        context.coordinator.limitsTextWidth = limitsTextWidth
 
         let webView = FindTrackingWKWebView(frame: .zero, configuration: configuration)
         webView.onFindFocus = onFindFocus
@@ -69,11 +60,9 @@ struct MarkdownWebView: NSViewRepresentable {
 
     func updateNSView(_ webView: WKWebView, context: Context) {
         context.coordinator.onNavigate = onNavigate
-        context.coordinator.onMarkdownEditEvent = onMarkdownEditEvent
+        applyTextWidth(to: webView, coordinator: context.coordinator)
         context.coordinator.onReadingPositionChanged = onReadingPositionChanged
-        context.coordinator.onQuickEditFocusApplied = onQuickEditFocusApplied
         context.coordinator.onAnchorRequestApplied = onAnchorRequestApplied
-        context.coordinator.canBeginEditing = canBeginEditing
         context.coordinator.onFindMatchCount = onFindMatchCount
         (webView as? FindTrackingWKWebView)?.onFindFocus = onFindFocus
         configureScrollView(of: webView)
@@ -139,13 +128,24 @@ struct MarkdownWebView: NSViewRepresentable {
                 context.coordinator.scrollToPendingAnchors(in: webView)
             }
         }
+    }
 
-        if context.coordinator.isQuickEditEnabled != isQuickEditEnabled {
-            context.coordinator.isQuickEditEnabled = isQuickEditEnabled
-            context.coordinator.applyQuickEditState(in: webView)
-        }
-        // Focus is applied in didFinish, once the web view created for Quick Edit has loaded.
-        context.coordinator.quickEditFocus = quickEditFocus
+    private static func textWidthScript(limitsTextWidth: Bool) -> WKUserScript {
+        WKUserScript(
+            source: TextWidthPreference.previewScript(limitsTextWidth: limitsTextWidth),
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        )
+    }
+
+    /// A changed preference replaces the script for the next load and updates the page on screen.
+    private func applyTextWidth(to webView: WKWebView, coordinator: Coordinator) {
+        guard coordinator.limitsTextWidth != limitsTextWidth else { return }
+        coordinator.limitsTextWidth = limitsTextWidth
+        let controller = webView.configuration.userContentController
+        controller.removeAllUserScripts()
+        controller.addUserScript(Self.textWidthScript(limitsTextWidth: limitsTextWidth))
+        webView.evaluateJavaScript(TextWidthPreference.previewScript(limitsTextWidth: limitsTextWidth), completionHandler: nil)
     }
 
     private func configureScrollView(of webView: WKWebView) {

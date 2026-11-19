@@ -10,7 +10,6 @@ extension PreviewPane {
                 documentID: tab.id,
                 previewRevision: tab.previewUpdatedAt,
                 outline: tab.markdownOutline,
-                markdownBlocks: tab.markdownBlocks,
                 editingSession: tab.markdownEditSession?.isEditing == true
                     || tab.markdownEditSession?.conflict != nil
                     ? tab.markdownEditSession
@@ -25,37 +24,8 @@ extension PreviewPane {
                         rebuildBlocks: false
                     )
                 },
-                onMarkdownEditEvent: { event in
-                    switch event.kind {
-                    case .begin:
-                        model.beginMarkdownQuickEdit(tabID: tab.id)
-                    case .change:
-                        model.updateMarkdownEditing(
-                            tabID: tab.id,
-                            text: event.text,
-                            rebuildBlocks: true
-                        )
-                    case .end:
-                        model.endMarkdownEditing(tabID: tab.id)
-                    case .undo:
-                        _ = model.undoMarkdownEdit()
-                    case .redo:
-                        _ = model.redoMarkdownEdit()
-                    case .inlineChange:
-                        if let blockID = event.blockID, let original = event.originalText {
-                            model.applyInlineMarkdownEdit(
-                                tabID: tab.id,
-                                blockID: blockID,
-                                unitIndex: event.unitIndex,
-                                original: original,
-                                edited: event.text
-                            )
-                        }
-                    }
-                },
-                isQuickEditEnabled: tab.markdownEditSession?.isPreviewInline == true,
-                onSetRawMarkdownEditing: { raw in
-                    model.setMarkdownRawEditing(tabID: tab.id, raw: raw)
+                onToggleMarkdownEditor: {
+                    model.toggleMarkdownEditor(tabID: tab.id)
                 },
                 onUndo: {
                     _ = model.undoMarkdownEdit()

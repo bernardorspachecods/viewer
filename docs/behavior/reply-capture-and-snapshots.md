@@ -41,7 +41,9 @@ tags: [behavior, capture, snapshots, reader-window]
 - The reader shows the rendered reply. Its header has the document title, path,
   update time, status, and the zoom, screenshot, and theme controls. It has no
   sidebar, folder, workspace name, or tab bar.
-- The editing toolbar appears while editing. Errors appear as a banner over the
+- The editing toolbar (outline, split view, diffs, Markdown editor, undo, save) is
+  shown whenever Focus Mode is off, so a reader window opened from Finder can edit.
+  `⇧⌘E` opens with Focus Mode on, which hides it. Errors appear as a banner over the
   preview.
 - `⌘W` closes the reader window rather than its tab while the window holds a single
   tab.

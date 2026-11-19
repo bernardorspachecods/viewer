@@ -328,3 +328,40 @@ func savesActiveCSVEditThroughSharedEditingAction() async throws {
     #expect(model.tabs[0].csvEditSession?.saveState == .saved)
     #expect(model.tabs[0].previewCSV?.rows[1][1] == "31")
 }
+
+@Test("the Markdown editor button opens the editor from the preview and leaves it again")
+@MainActor
+func togglesTheMarkdownEditor() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("viewer-toggle-" + UUID().uuidString)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let file = root.appendingPathComponent("note.md")
+    try "# Note".write(to: file, atomically: true, encoding: .utf8)
+    let model = AppModel()
+    model.openDocument(url: file)
+    let tab = try #require(model.activeTab)
+    #expect(tab.markdownEditSession?.isEditing != true)
+
+    model.toggleMarkdownEditor(tabID: tab.id)
+    #expect(model.activeTab?.markdownEditSession?.isEditing == true)
+    #expect(model.activeTab?.markdownEditSession?.mode == .markdown)
+
+    model.toggleMarkdownEditor(tabID: tab.id)
+    #expect(model.activeTab?.markdownEditSession?.isEditing != true)
+}
+
+@Test("the Markdown editor button does nothing in split view")
+@MainActor
+func markdownEditorButtonIgnoresSplitView() throws {
+    let model = AppModel()
+    model.createNewMarkdownDocument()
+    let tab = try #require(model.activeTab)
+    model.toggleMarkdownSplitView(tabID: tab.id)
+    #expect(model.activeTab?.presentationMode == .split)
+
+    model.toggleMarkdownEditor(tabID: tab.id)
+
+    #expect(model.activeTab?.presentationMode == .split)
+    #expect(model.activeTab?.markdownEditSession?.isEditing == true)
+}

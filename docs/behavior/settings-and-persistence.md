@@ -9,6 +9,9 @@ tags: [behavior, settings, persistence]
 ## Settings
 
 - Theme.
+- Markdown text width (Appearance tab): by default the text runs to the window edges;
+  one switch keeps it in a centered column instead. It applies to every window and is
+  kept in the app's defaults. Details are in [markdown.md](/docs/behavior/markdown.md).
 - Default zoom levels.
 - `shell escape` mode for LaTeX. It is off by default and changes only by an explicit
   choice here. See [security.md](/docs/technical/security.md).

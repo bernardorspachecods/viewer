@@ -423,3 +423,27 @@ func discardsGitChangesAndLeavesJSONInSourceMode() async throws {
     #expect(updated.jsonEditSession?.currentSource == "{\"head\":true}")
     #expect(updated.jsonEditSession?.saveState == .saved)
 }
+
+@MainActor
+private final class NativeTextView: NSTextView {}
+
+@Test("the draft flush skips the Markdown editor and the search field")
+@MainActor
+func draftFlushSkipsTheMarkdownEditorAndFieldEditors() {
+    let rawEditor = NSTextView()
+    rawEditor.isEditable = true
+    #expect(MarkdownDraftFlushPolicy.shouldFlush(from: rawEditor))
+
+    let readOnly = NSTextView()
+    readOnly.isEditable = false
+    #expect(!MarkdownDraftFlushPolicy.shouldFlush(from: readOnly))
+
+    let fieldEditor = NSTextView()
+    fieldEditor.isEditable = true
+    fieldEditor.isFieldEditor = true
+    #expect(!MarkdownDraftFlushPolicy.shouldFlush(from: fieldEditor))
+
+    let engine = NativeTextView()
+    engine.isEditable = true
+    #expect(!MarkdownDraftFlushPolicy.shouldFlush(from: engine))
+}

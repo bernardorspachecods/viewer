@@ -69,8 +69,50 @@ public enum MarkdownLinkResolver {
         let parts = destination.split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false)
         let path = decoded(String(parts[0]))
         let fragment = parts.count > 1 ? decoded(String(parts[1])) : nil
-        let fileURL = URL(fileURLWithPath: path, relativeTo: baseURL).standardizedFileURL
+        let fileURL = path.hasPrefix("/")
+            ? rootRelativeFileURL(path: path, baseURL: baseURL)
+            : URL(fileURLWithPath: path, relativeTo: baseURL).standardizedFileURL
         return .localFile(fileURL, fragment: fragment?.isEmpty == false ? fragment : nil)
+    }
+
+    /// A destination starting with `/` (`/docs/a.md`) is read from the project root, as
+    /// repositories write it, not from the disk root. A path that exists on the disk stays
+    /// as written. Otherwise the project root is the nearest folder above the document with a
+    /// `.git` entry; without one, or when the file is not there, the nearest folder above the
+    /// document that holds the path wins. When none does, the path stays as written, so the
+    /// link points at nothing.
+    private static func rootRelativeFileURL(path: String, baseURL: URL) -> URL {
+        let absolute = URL(fileURLWithPath: path).standardizedFileURL
+        let manager = FileManager.default
+        guard !manager.fileExists(atPath: absolute.path) else { return absolute }
+
+        let relativePath = String(path.drop(while: { $0 == "/" }))
+        guard !relativePath.isEmpty else { return absolute }
+        let folders = foldersFrom(baseURL)
+
+        if let gitRoot = folders.first(where: {
+            manager.fileExists(atPath: $0.appendingPathComponent(".git").path)
+        }) {
+            let candidate = gitRoot.appendingPathComponent(relativePath).standardizedFileURL
+            if manager.fileExists(atPath: candidate.path) { return candidate }
+        }
+        for folder in folders {
+            let candidate = folder.appendingPathComponent(relativePath).standardizedFileURL
+            if manager.fileExists(atPath: candidate.path) { return candidate }
+        }
+        return absolute
+    }
+
+    /// `url` and every folder above it, nearest first.
+    private static func foldersFrom(_ url: URL) -> [URL] {
+        var folders: [URL] = []
+        var folder = url.standardizedFileURL
+        while true {
+            folders.append(folder)
+            let parent = folder.deletingLastPathComponent().standardizedFileURL
+            guard parent.path != folder.path else { return folders }
+            folder = parent
+        }
     }
 
     /// Anchors to scroll to when a navigation stays in the document at `documentDirectory`

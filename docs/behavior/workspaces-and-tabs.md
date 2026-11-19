@@ -61,7 +61,7 @@ tags: [behavior, workspaces, tabs]
 
 - The focus button in the header, and `⇧⌘F` (View > Focus Mode), show only the open
   document's preview: the header, the sidebar, the document tab bar, and the
-  document's mode and edit bar (outline, split, diffs, raw Markdown, undo, save) are
+  document's mode and edit bar (outline, split, diffs, Markdown editor, undo, save) are
   hidden, and the document fills the window. Leave focus mode to use them. Choose the button again, press `⇧⌘F`, or press
   Esc, to leave it.
 - While focus mode is on, a small button at the top-right of the document also leaves

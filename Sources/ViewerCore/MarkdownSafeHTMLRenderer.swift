@@ -26,7 +26,7 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
 
     mutating func visitDocument(_ document: Document) {
         if let frontMatter = specialRegions.first(where: { $0.kind == .frontMatter }) {
-            html += "<pre class=\"bp-special-placeholder\"\(specialAttribute(for: frontMatter))>Front matter\n\(escapeText(frontMatter.source))</pre>\n"
+            html += frontMatterHTML(frontMatter)
         }
         descendInto(document)
     }
@@ -238,19 +238,33 @@ struct SafeMarkdownHTMLRenderer: MarkupWalker {
               let region = specialRegions.first(where: {
                   $0.kind == .html && $0.sourceRange.startOffset == sourceOffset(for: range.lowerBound)
               }) else { return }
-        html += "<pre class=\"bp-special-placeholder\"\(specialAttribute(for: region))>HTML raw\n\(escapeText(region.source))</pre>\n"
+        let isComment = region.source.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("<!--")
+        let kindClass = isComment ? "bp-html-comment" : "bp-html-block"
+        html += "<pre class=\"bp-special-placeholder \(kindClass)\"\(specialAttribute(for: region))>\(escapeText(region.source))</pre>\n"
+    }
+
+    /// Front matter as a property list when it is flat `key: value` lines, else as text.
+    private func frontMatterHTML(_ region: MarkdownSpecialRegion) -> String {
+        let attributes = specialAttribute(for: region)
+        guard let pairs = MarkdownFrontMatterProperties.parse(region.source) else {
+            return "<pre class=\"bp-special-placeholder bp-front-matter-text\"\(attributes)>\(escapeText(region.source))</pre>\n"
+        }
+        let rows = pairs.map { "<dt>\(escapeText($0.key))</dt><dd>\(escapeText($0.value))</dd>" }.joined()
+        return "<aside class=\"bp-front-matter\"\(attributes)><dl>\(rows)</dl></aside>\n"
     }
     mutating func visitInlineHTML(_ inlineHTML: InlineHTML) {
         if let safeHTML = MarkdownSafeInlineHTML.inline(inlineHTML.rawHTML) {
             html += safeHTML
             return
         }
-        let attribute = inlineHTML.range.flatMap { range in
+        let region = inlineHTML.range.flatMap { range in
             specialRegions.first(where: {
                 $0.kind == .html && $0.sourceRange.startOffset == sourceOffset(for: range.lowerBound)
             })
-        }.map(specialAttribute(for:)) ?? ""
-        html += "<span class=\"bp-special-placeholder\"\(attribute)>HTML raw</span>"
+        }
+        let attribute = region.map(specialAttribute(for:)) ?? ""
+        // Show the tag itself, so a stray `<span>` is visible as what it is.
+        html += "<span class=\"bp-special-placeholder\"\(attribute)>\(escapeText(inlineHTML.rawHTML))</span>"
     }
 
     private func safeURL(_ rawURL: String?) -> String? {

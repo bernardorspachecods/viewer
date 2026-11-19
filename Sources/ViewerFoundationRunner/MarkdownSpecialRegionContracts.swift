@@ -82,3 +82,24 @@ extension Runner {
         expect(protected?.html.contains("data-bp-editable=\"false\"") == true, "unsupported Markdown regions remain protected")
     }
 }
+
+extension Runner {
+    mutating func runFrontMatterPropertyContracts() {
+        let flat = "---\ntitle: \"Hello\"\ntags: [a, b]\ndescription: first line\n  continues here\n---"
+        let parsed = MarkdownFrontMatterProperties.parse(flat)
+        expect(parsed?.map(\.key) == ["title", "tags", "description"], "front matter properties keep their keys in order")
+        expect(parsed?.map(\.value) == ["Hello", "[a, b]", "first line continues here"], "front matter values drop quotes and join continuation lines")
+        expect(MarkdownFrontMatterProperties.parse("---\ntags:\n  - a\n---") == nil, "front matter with a list falls back to text")
+        expect(MarkdownFrontMatterProperties.parse("---\nnote: |\n  block\n---") == nil, "front matter with a block scalar falls back to text")
+        expect(MarkdownFrontMatterProperties.parse("not front matter") == nil, "text without delimiters is not front matter")
+
+        let rendered = try? SwiftMarkdownAdapter().render(
+            source: "---\ntitle: A\n---\n\n# Body\n\n<!-- note -->\n\n<div>x</div>\n",
+            baseURL: URL(fileURLWithPath: "/tmp/project", isDirectory: true)
+        )
+        expect(rendered?.html.contains("<aside class=\"bp-front-matter\"") == true, "flat front matter renders as a property list")
+        expect(rendered?.html.contains("<dt>title</dt><dd>A</dd>") == true, "front matter property list shows the pair")
+        expect(rendered?.html.contains("bp-html-comment") == true, "an HTML comment keeps a quiet placeholder")
+        expect(rendered?.html.contains("bp-html-block") == true, "other HTML keeps the labelled placeholder")
+    }
+}

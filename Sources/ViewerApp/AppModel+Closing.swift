@@ -209,9 +209,6 @@ extension AppModel {
             tabs[index].markdownEditSession?.saveState = .saved
             tabs[index].markdownEditSession?.conflict = nil
             tabs[index].markdownEditSession?.isEditing = keepEditing
-            if !keepEditing {
-                tabs[index].markdownEditSession?.isPreviewInline = false
-            }
             tabs[index].errorMessage = nil
             renderMarkdown(tabID: tab.id)
         } else if let session = tabs[index].jsonEditSession {

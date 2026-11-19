@@ -8,21 +8,19 @@ private enum MarkdownOutlineLayout {
 
 struct MarkdownPreviewView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage(TextWidthPreference.key) private var limitsTextWidth = TextWidthPreference.defaultLimitsTextWidth
     @EnvironmentObject private var model: AppModel
     let html: String
     let baseURL: URL
     let documentID: String
     let previewRevision: Date?
     let outline: [MarkdownOutlineEntry]
-    let markdownBlocks: [MarkdownEditableBlock]
     let editingSession: MarkdownEditSession?
     let diffSession: DocumentDiffSession?
     let presentationMode: DocumentPresentationMode
     let onNavigate: (URL) -> Void
     let onMarkdownTextChanged: @MainActor @Sendable (String) -> Void
-    let onMarkdownEditEvent: (MarkdownWebEditEvent) -> Void
-    let isQuickEditEnabled: Bool
-    let onSetRawMarkdownEditing: (Bool) -> Void
+    let onToggleMarkdownEditor: () -> Void
     let onUndo: () -> Void
     let onRedo: () -> Void
     let onToggleSplitView: () -> Void
@@ -54,7 +52,6 @@ struct MarkdownPreviewView: View {
     @State private var selectedHeadingID: String?
     @State private var outlineRequestID = 0
     @State private var pendingCursorUTF8Offset: Int?
-    @State private var quickEditFocus: (blockID: String, offset: Int, requestID: Int)?
 
     private var outlineItems: [DocumentOutlineItem] {
         outline.map {
@@ -69,29 +66,27 @@ struct MarkdownPreviewView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Reader windows keep the toolbar only while editing, so changes
-            // can still be saved or discarded.
-            if !model.presentation.isReader || editingSession != nil {
-                DocumentInteractionToolbar(
-                    isOutlineAvailable: !outlineItems.isEmpty,
-                    isOutlineVisible: isOutlineVisible,
-                    onToggleOutline: { isOutlineVisible.toggle() },
-                    editingSession: editingSession,
-                    presentationMode: presentationMode,
-                    supportsSplitView: true,
-                    onToggleSplitView: onToggleSplitView,
-                    diffSession: diffSession,
-                    onToggleDiff: onToggleDiff,
-                    onToggleRawMarkdown: presentationMode == .split || diffSession != nil
-                        ? nil
-                        : { onSetRawMarkdownEditing(!isRawMarkdownActive) },
-                    isRawMarkdownActive: isRawMarkdownActive,
-                    onUndo: onUndo,
-                    onRedo: onRedo,
-                    onDiscardEditing: onDiscardMarkdownEditing,
-                    onSave: onEndMarkdownEditing
-                )
-            }
+            // The toolbar is the only way into editing, so reader windows show it too.
+            // Focus mode hides it (`DocumentInteractionToolbar` checks `isFocusMode`).
+            DocumentInteractionToolbar(
+                isOutlineAvailable: !outlineItems.isEmpty,
+                isOutlineVisible: isOutlineVisible,
+                onToggleOutline: { isOutlineVisible.toggle() },
+                editingSession: editingSession,
+                presentationMode: presentationMode,
+                supportsSplitView: true,
+                onToggleSplitView: onToggleSplitView,
+                diffSession: diffSession,
+                onToggleDiff: onToggleDiff,
+                onToggleMarkdownEditor: presentationMode == .split || diffSession != nil
+                    ? nil
+                    : onToggleMarkdownEditor,
+                isMarkdownEditorActive: isMarkdownEditorActive,
+                onUndo: onUndo,
+                onRedo: onRedo,
+                onDiscardEditing: onDiscardMarkdownEditing,
+                onSave: onEndMarkdownEditing
+            )
 
             if let editingSession, let conflict = editingSession.conflict {
                 MarkdownConflictView(
@@ -111,9 +106,8 @@ struct MarkdownPreviewView: View {
         .onExitCommand(perform: exitEditing)
     }
 
-    private var isRawMarkdownActive: Bool {
-        guard let editingSession else { return false }
-        return !editingSession.isPreviewInline && presentationMode != .split
+    private var isMarkdownEditorActive: Bool {
+        editingSession != nil && presentationMode != .split
     }
 
     private var exitEditing: () -> Void {
@@ -146,9 +140,8 @@ struct MarkdownPreviewView: View {
         )
     }
 
-    // The preview must stay in one `if` branch for every state that shows it
-    // (reading and inline editing). Separate branches would give the web view
-    // a new identity, so entering inline edit would rebuild and reload it.
+    // The preview is the reading surface; editing replaces it with the Markdown editor, and
+    // split view shows both. Diffs keep their own raw editor (`DocumentDiffView`).
     @ViewBuilder
     private var documentSurface: some View {
         if let editingSession, let diffSession {
@@ -177,25 +170,27 @@ struct MarkdownPreviewView: View {
                 },
                 onDiscardGitChanges: onDiscardGitChanges
             )
-        } else if let editingSession, !editingSession.isPreviewInline {
+        } else if let editingSession {
             if editingSession.mode == .split {
                 ResizableSplitView {
-                    markdownSourceEditor(editingSession: editingSession)
+                    markdownEditor(editingSession: editingSession)
                 } trailing: {
                     previewSurface
                 }
             } else {
-                markdownSourceEditor(editingSession: editingSession)
+                markdownEditor(editingSession: editingSession)
             }
         } else {
             previewSurface
         }
     }
 
-    private func markdownSourceEditor(editingSession: MarkdownEditSession) -> some View {
-        MarkdownSourceEditor(
+    private func markdownEditor(editingSession: MarkdownEditSession) -> some View {
+        MarkdownLiveEditor(
             source: editingSession.currentSource,
+            documentID: documentID,
             zoom: zoom,
+            limitsTextWidth: limitsTextWidth,
             cursorUTF8Offset: pendingCursorUTF8Offset,
             cursorRequestID: outlineRequestID,
             findQuery: findQuery,
@@ -204,15 +199,14 @@ struct MarkdownPreviewView: View {
             isFindTarget: findTarget == .source,
             onFindFocus: { onFindTargetChanged(.source) },
             onFindMatchCount: onFindMatchCount,
-            onEndEditing: { text in
-                onMarkdownTextChanged(text)
+            onSourceChanged: onMarkdownTextChanged,
+            onEndEditing: {
                 if editingSession.mode == .split {
                     onSaveMarkdownEditing()
                 } else {
                     onEndMarkdownEditing()
                 }
-            },
-            onSourceChanged: onMarkdownTextChanged
+            }
         )
     }
 
@@ -223,17 +217,8 @@ struct MarkdownPreviewView: View {
                 baseURL: baseURL,
                 documentID: documentID,
                 previewRevision: previewRevision,
-                canBeginEditing: editingSession == nil,
                 onNavigate: onNavigate,
-                onMarkdownEditEvent: { event in
-                    if event.kind == .begin {
-                        pendingCursorUTF8Offset = cursorUTF8Offset(for: event)
-                        if let blockID = event.blockID, let offset = event.renderedTextOffset {
-                            quickEditFocus = (blockID, offset, (quickEditFocus?.requestID ?? 0) + 1)
-                        }
-                    }
-                    onMarkdownEditEvent(event)
-                },
+                limitsTextWidth: limitsTextWidth,
                 zoom: zoom,
                 findQuery: findQuery,
                 findRequestID: findRequestID,
@@ -246,10 +231,7 @@ struct MarkdownPreviewView: View {
                 anchorRequest: anchorRequest,
                 onAnchorRequestApplied: onAnchorRequestApplied,
                 readingPosition: readingPosition,
-                onReadingPositionChanged: onReadingPositionChanged,
-                isQuickEditEnabled: isQuickEditEnabled,
-                quickEditFocus: quickEditFocus,
-                onQuickEditFocusApplied: { quickEditFocus = nil }
+                onReadingPositionChanged: onReadingPositionChanged
             )
             if isSnapshotCaptureActive {
                 SnapshotSelectionOverlay(
@@ -260,97 +242,7 @@ struct MarkdownPreviewView: View {
             }
         }
     }
-
-    private func cursorUTF8Offset(for event: MarkdownWebEditEvent) -> Int? {
-        guard let blockID = event.blockID,
-              let renderedTextOffset = event.renderedTextOffset,
-              let block = markdownBlocks.first(where: { $0.id == blockID }) else {
-            return nil
-        }
-        return block.sourceRange.startOffset + block.sourceOffset(forRenderedTextOffset: renderedTextOffset)
-    }
 }
-
-struct MarkdownWebEditEvent {
-    enum Kind {
-        case begin
-        case change
-        case end
-        case undo
-        case redo
-        case inlineChange
-    }
-
-    let kind: Kind
-    let text: String
-    let blockID: String?
-    let renderedTextOffset: Int?
-    let unitIndex: Int?
-    let originalText: String?
-}
-
-private struct MarkdownSourceEditor: View {
-    @Environment(\.colorScheme) private var colorScheme
-    let source: String
-    let zoom: Double
-    let cursorUTF8Offset: Int?
-    let cursorRequestID: Int
-    let findQuery: String
-    let findRequestID: Int
-    let findBackwards: Bool
-    let isFindTarget: Bool
-    let onFindFocus: @MainActor @Sendable () -> Void
-    let onFindMatchCount: @MainActor @Sendable (Int) -> Void
-    let onEndEditing: @MainActor @Sendable (String) -> Void
-    let onSourceChanged: @MainActor @Sendable (String) -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                Spacer(minLength: 0)
-                SourceTextView(
-                    source: source,
-                    zoom: zoom,
-                    cursorUTF8Offset: cursorUTF8Offset,
-                    cursorRequestID: cursorRequestID,
-                    isEditable: true,
-                    lineNumbers: true,
-                    lineNumberOverrides: [:],
-                    lineHighlights: [:],
-                    lineSpacingBefore: [:],
-                    monospaced: false,
-                    syntaxHighlighting: .markdown(
-                        MarkdownSyntaxColorPalette(isDark: colorScheme == .dark)
-                    ),
-                    markdownShortcutsEnabled: true,
-                    findQuery: findQuery,
-                    findRequestID: findRequestID,
-                    findBackwards: findBackwards,
-                    isFindTarget: isFindTarget,
-                    defersSourceChangeUpdates: true,
-                    onFindFocus: onFindFocus,
-                    onFindMatchCount: onFindMatchCount,
-                    onSourceChanged: onSourceChanged,
-                    onEndEditing: onEndEditing,
-                    onDoubleClick: nil
-                )
-                .frame(
-                    maxWidth: (
-                        SourceEditorLayout.contentMaxWidth + (SourceEditorLayout.horizontalPadding * 2)
-                    ) * CGFloat(zoom),
-                    maxHeight: .infinity
-                )
-                Spacer(minLength: 0)
-            }
-            .onExitCommand {
-                onEndEditing(source)
-            }
-        }
-        .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
-        .background(BPTokens.Color.canvas)
-    }
-}
-
 
 struct MarkdownConflictView: View {
     let conflict: MarkdownConflict

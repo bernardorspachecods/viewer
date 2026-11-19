@@ -5,13 +5,12 @@ import AppKit
 
 extension MarkdownWebView {
     @MainActor
-    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    final class Coordinator: NSObject, WKNavigationDelegate {
         var html: String?
         var baseURL: URL?
         var documentID: String?
         var previewRevision: Date?
         var onNavigate: ((URL) -> Void)?
-        var onMarkdownEditEvent: ((MarkdownWebEditEvent) -> Void)?
         var onReadingPositionChanged: ((MarkdownReadingPosition) -> Void)?
         var onFindMatchCount: @MainActor @Sendable (Int) -> Void = { _ in }
         var lastReadingPosition: MarkdownReadingPosition?
@@ -28,11 +27,7 @@ extension MarkdownWebView {
         var lastAnchorRequestID: UUID?
         var onAnchorRequestApplied: (UUID) -> Void = { _ in }
         var isDocumentLoaded = false
-        var canBeginEditing = true
-        var isQuickEditEnabled = false
-        var quickEditFocus: (blockID: String, offset: Int, requestID: Int)?
-        var onQuickEditFocusApplied: () -> Void = {}
-        private var handledQuickEditRequestID: Int?
+        var limitsTextWidth = false
         private var scrollObserver: ObserverToken?
         private var captureTask: Task<Void, Never>?
         private var boundsObservationTask: Task<Void, Never>?
@@ -163,61 +158,6 @@ extension MarkdownWebView {
             scrollToPendingAnchors(in: webView)
             find(in: webView, updateMatchCount: true)
             scheduleCapture(of: webView)
-            applyQuickEditState(in: webView)
-            applyQuickEditFocus(in: webView)
-        }
-
-        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard message.name == "viewerMarkdownEdit",
-                  let payload = message.body as? [String: Any],
-                  let type = payload["type"] as? String,
-                  let text = payload["text"] as? String else { return }
-            guard type != "begin" || canBeginEditing else { return }
-
-            let kind: MarkdownWebEditEvent.Kind
-            switch type {
-            case "begin": kind = .begin
-            case "change": kind = .change
-            case "end": kind = .end
-            case "undo": kind = .undo
-            case "redo": kind = .redo
-            case "inlineChange": kind = .inlineChange
-            default: return
-            }
-            onMarkdownEditEvent?(MarkdownWebEditEvent(
-                kind: kind,
-                text: text,
-                blockID: payload["blockID"] as? String,
-                renderedTextOffset: (payload["renderedTextOffset"] as? NSNumber)?.intValue,
-                unitIndex: (payload["unitIndex"] as? NSNumber)?.intValue,
-                originalText: payload["original"] as? String
-            ))
-        }
-
-        func applyQuickEditState(in webView: WKWebView) {
-            guard isDocumentLoaded else { return }
-            webView.evaluateJavaScript(
-                "window.bpInline?.setEnabled(\(isQuickEditEnabled))",
-                completionHandler: nil
-            )
-        }
-
-        func applyQuickEditFocus(in webView: WKWebView) {
-            guard isDocumentLoaded,
-                  let quickEditFocus,
-                  quickEditFocus.requestID != handledQuickEditRequestID,
-                  let encodedID = try? String(
-                    data: JSONEncoder().encode(quickEditFocus.blockID),
-                    encoding: .utf8
-                  ) else {
-                return
-            }
-            handledQuickEditRequestID = quickEditFocus.requestID
-            webView.evaluateJavaScript(
-                "window.bpInline?.focusAt(\(encodedID), \(quickEditFocus.offset))",
-                completionHandler: nil
-            )
-            onQuickEditFocusApplied()
         }
 
         func restoreReadingPosition(_ position: MarkdownReadingPosition, in webView: WKWebView) {
