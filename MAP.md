@@ -27,7 +27,7 @@ Structural rules for code and documents are in [AGENTS.md](/AGENTS.md). How to d
 | --- | --- |
 | Agent rules for this repository: structural rules for code and documents, and the `scripts/restart-app.sh` step that ends a work round changing app use. | [AGENTS.md](/AGENTS.md) |
 | Manual validation fixtures for Markdown, link, and LaTeX previews: small input files, a local SVG, and a LaTeX project; these corpora contain no personal documents. | [MAP.md](/Fixtures/MAP.md) |
-| Swift targets of the Viewer package: the shared core, macOS app, executable contract runners, and isolated tab prototypes; runners and prototypes exercise core seams rather than copy app logic. | [MAP.md](/Sources/MAP.md) |
+| UI-independent Viewer logic: filesystem scanning, session and tab models, document opening, Markdown, LaTeX, JSON and CSV adapters, diffs, and editing merges. | [MAP.md](/Sources/ViewerCore/MAP.md) |
 | What remains open after the 2026-11-18 work round: decisions the owner must make, behavior that needs a live check, and known gaps in tests and cleanup. | [backlog.md](/backlog.md) |
 | Current Viewer documentation: user-visible app behavior (one document per area) and technical architecture (one document per concern). | [MAP.md](/docs/MAP.md) |
 | Procedures specific to the Viewer repository for agents: how to decide what a document holds. | [MAP.md](/repo-library/MAP.md) |
@@ -35,6 +35,9 @@ Structural rules for code and documents are in [AGENTS.md](/AGENTS.md). How to d
 
 ## Artifact references
 
+- [AppModel.swift](/Sources/ViewerApp/AppModel.swift) coordinates UI intents, observable state, and session events.
+- [SourceTextView.swift](/Sources/ViewerApp/SourceTextView.swift) is the SwiftUI bridge of the source editor. Its AppKit parts are split by topic: `SourceTextView+*.swift`, `MarkdownNSTextView*.swift`, `SourceSyntax*.swift`, and `SourceEditorLayout.swift`.
+- [TerminalReplyController.swift](/Sources/ViewerApp/TerminalReader/TerminalReplyController.swift) runs the terminal reply capture engine.
 - [Package.swift](/Package.swift) defines the Swift package products, targets, and dependencies.
 - [restart-app.sh](/scripts/restart-app.sh) closes local app instances, builds the debug app, and opens it.
 - [dev-run.sh](/scripts/dev-run.sh) rebuilds and restarts the app when `Sources/` changes.

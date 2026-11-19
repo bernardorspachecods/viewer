@@ -25,8 +25,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "ViewerApp",
-            dependencies: ["ViewerCore"],
-            exclude: ["MAP.md"]
+            dependencies: ["ViewerCore"]
         ),
         .testTarget(
             name: "ViewerAppTests",

@@ -6,8 +6,8 @@ tags: [architecture, swift]
 
 # Technical architecture
 
-Module contents are listed by the member maps: [Sources/MAP.md](/Sources/MAP.md),
-[ViewerApp](/Sources/ViewerApp/MAP.md), and [ViewerCore](/Sources/ViewerCore/MAP.md).
+Module contents are listed by the [ViewerCore map](/Sources/ViewerCore/MAP.md) and
+the [repository map](/MAP.md).
 This document holds the rules that span them.
 
 ## Core and App boundary
@@ -38,3 +38,15 @@ This document holds the rules that span them.
 - Storage: [persistence.md](/docs/technical/persistence.md).
 - Window composition and what views render: [ui-architecture.md](/docs/technical/ui-architecture.md).
 - Authorization, Content Security Policy, and external files: [security.md](/docs/technical/security.md).
+
+## Targets
+
+- `ViewerCore` holds the UI-independent logic (see its [map](/Sources/ViewerCore/MAP.md)).
+  `ViewerApp` is the macOS SwiftUI and AppKit layer; logic that needs no UI framework
+  belongs in Core.
+- `ViewerContractRunner` covers the Markdown adapter and the LaTeX/process pipeline.
+  `ViewerFoundationRunner` covers filesystem, tree, tabs, persistence, and editing and
+  merge foundations. They give deterministic validation, so tests should not duplicate
+  runner logic. They exist because the local toolchain lacks the `Testing` module.
+- `ViewerTabPrototype` and `ViewerWindowTabPrototype` are isolated tab prototypes that
+  exercise tab behavior independently of the app target.

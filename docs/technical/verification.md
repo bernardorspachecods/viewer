@@ -25,7 +25,7 @@ failing step's last output and a summary. It exits 1 on any failure:
 5. `bkf validate .` and `bkf validate repo-library` in `repo-library/`.
 6. `swift test`: the app test target in `Tests/ViewerAppTests/`.
 
-The runners' roles are in [Sources/MAP.md](/Sources/MAP.md).
+The runners' roles are in [technical architecture](/docs/technical/architecture.md).
 
 ## What `swift test` covers
 
