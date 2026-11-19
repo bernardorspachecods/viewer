@@ -2,3 +2,9 @@
 .swiftpm/
 DerivedData/
 .DS_Store
+
+# Personal notes shown in the Agentic app
+/notes.md
+/notes[2-9].md
+/notes[1-9][0-9]*.md
+/.notes-assets/
