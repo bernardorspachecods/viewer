@@ -12,8 +12,9 @@ tags: [behavior, settings, persistence]
 - Default zoom levels.
 - `shell escape` mode for LaTeX. It is off by default and changes only by an explicit
   choice here. See [security.md](/docs/technical/security.md).
-- Workspaces tab: the default workspace folders. Add folders with `Add Folder…` and
-  remove them with the minus button. Their launch behavior is in
+- Workspaces tab: the "On Launch" choice (reopen the last workspaces, or always open
+  the default workspaces), and the default workspace folders. Add folders with
+  `Add Folder…` and remove them with the minus button. Their launch behavior is in
   [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
 - Files tab: the file types the tree shows. Two sections:
   - "Supported by Viewer": Markdown, LaTeX, JSON, CSV, Word, PDF, and images. These
@@ -31,7 +32,7 @@ tags: [behavior, settings, persistence]
   the show-selected-files toggle.
 - Per document: zoom, outline width and visibility, and reading position.
 - Global: theme, sidebar width and visibility, default zoom levels, `shell escape`,
-  default workspace folders, selected file types, and extra extensions.
+  launch choice, default workspace folders, selected file types, and extra extensions.
 - Snapshots, until you close them.
 
 ## Not kept across restarts

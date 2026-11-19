@@ -21,6 +21,37 @@ that produces it. Module boundaries and coordination are in
 - Overlays (outline, diff, settings, errors, root selection, permissions, and
   workspace switching) are presented by the app layer, not by the preview views.
 - Snapshots use a separate AppKit window.
+- Focus mode hides the header, the sidebar, and the tab bar. The visibility rule is
+  the pure `WindowChromeLayout` in `Sources/BPViewerApp/WindowChromeLayout.swift`,
+  read through `AppModel.chromeLayout` by `RootView` and `DocumentWorkspaceView`.
+  The sidebar flag is not written while focus mode is on, so exiting restores it.
+  `RootView` also overlays `FocusExitButton` while focus mode is on, because the header
+  that holds the focus button is hidden then.
+- Focus mode hides the window's title bar and the native tab strip without macOS full
+  screen. Full screen keeps the tab strip, and it is the wrong result for focus mode.
+  `WindowFocusChromeSync` (one per attached window, created in `AppModel.attach(to:)`)
+  applies it in AppKit: `titleVisibility`, `titlebarAppearsTransparent`,
+  `.fullSizeContentView`, the three standard window buttons, and
+  `isMovableByWindowBackground`. The decisions are the pure `FocusWindowChromePlan` in
+  `Sources/BPViewerApp/FocusWindowChromePlan.swift`, which also holds the state to
+  restore: the title bar as it was before focus mode, saved once and written back on
+  exit. The window title is not touched, so it stays correct after exit.
+- The native tab strip is a title bar accessory the system adds to each window of the
+  tab group. The sync hides it per window with `isHidden` on the window's
+  `titlebarAccessoryViewControllers` (the app adds none of its own), only when the group
+  has more than one tab. `window.toggleTabBar(nil)` was tried first and did nothing in a
+  live run: the strip stayed visible even with the window key. The sync is applied after
+  the title bar change and checked again on the next run-loop turn, and it also runs on
+  `NSWindow.didBecomeKeyNotification`.
+- The sync removes its observers on `NSWindow.willCloseNotification`.
+- Keyboard shortcuts are defined once, in `AppShortcuts` (`Sources/BPViewerCore/AppShortcutCatalog.swift`).
+  The menu commands bind the single-key ones through `appShortcut`
+  (`Sources/BPViewerApp/AppShortcut+Menu.swift`), and the Settings Shortcuts tab
+  (`ShortcutsSettingsView.swift`) lists the same values. Shortcuts handled by a view or a
+  global monitor are listed there too, but bound where they are handled.
+  Esc exits focus mode through `.onExitCommand` on the root view: SwiftUI delivers it
+  only after the focused editor, find field, or sheet has not consumed it. Behavior
+  is in [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
 - Reader windows omit the sidebar toggle, the folder button, and the workspace
   identity. Their rules are in [reply-capture-and-snapshots.md](/docs/behavior/reply-capture-and-snapshots.md).
 

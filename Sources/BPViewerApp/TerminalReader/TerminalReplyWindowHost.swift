@@ -8,8 +8,24 @@ extension WorkspaceWindowManager: TerminalReplyHost {
         // The shortcut arrives while Terminal is frontmost. `activeModel` is
         // the Viewer window that was focused before the app switch; AppKit's
         // keyWindow may still point at another transient or stale window.
-        let model = activeModel ?? lastKnownModel
-        guard let model else { return nil }
+        // A tab belongs to a workspace window: a reader or capture window left
+        // focused by an earlier capture has no tab bar, so it is never the target.
+        let model: AppModel?
+        if destination == .workspaceTab {
+            model = [activeModel, lastWorkspaceModel, lastKnownModel]
+                .compactMap { $0 }
+                .first { $0.presentation == .workspace }
+                ?? models.values.first { $0.presentation == .workspace }
+        } else {
+            model = activeModel ?? lastKnownModel
+        }
+        guard let model else {
+            // No workspace window exists: the tab falls back to a capture window.
+            guard destination == .workspaceTab else { return nil }
+            let (captureModel, captureWindow) = makeStandaloneWindow(.standalone)
+            bringForward(captureWindow, model: captureModel)
+            return captureModel
+        }
 
         let existingWindow = window(for: model)
             ?? (lastKnownModel === model ? lastKnownWindow : nil)

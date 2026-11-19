@@ -51,15 +51,44 @@ tags: [behavior, workspaces, tabs]
   no path. The first `Save` opens a panel to choose the `.md` file. Such a tab is
   not restored after a restart.
 
+## Focus mode
+
+- The focus button in the header, and `⇧⌘F` (View > Focus Mode), show only the open
+  document's preview: the header, the sidebar, the document tab bar, and the
+  document's mode and edit bar (outline, split, diffs, raw Markdown, undo, save) are
+  hidden, and the document fills the window. Leave focus mode to use them. Choose the button again, press `⇧⌘F`, or press
+  Esc, to leave it.
+- While focus mode is on, a small button at the top-right of the document also leaves
+  it. It is faint until the pointer is over it. Reader windows have it too.
+- Focus mode also hides the window's title bar (its title and the traffic lights) and
+  the native tab strip of workspace tabs. The window stays a normal window, not macOS
+  full screen, and it can still be dragged by its background. Leaving focus mode puts
+  back the title bar the window had before, and shows the tab strip again.
+- Focus mode is per window: hiding the tab strip in one window does not hide it in
+  the others. A window with a single tab has no strip, so nothing changes for it.
+- `⌘W` still closes the active tab or window in focus mode.
+- Esc leaves focus mode only when no other view takes it first. Editors, the find
+  bar, and dialogs keep their own Esc behavior, and Esc does nothing when focus mode
+  is off.
+- `⌘F` still opens the find bar inside the focused view.
+- Focus mode is per window and is not saved: every launch starts with it off. It
+  does not change the saved sidebar setting, so leaving focus mode brings back the
+  sidebar state the window had before.
+- Standalone reader windows and workspace windows both support it.
+
 ## Launch and restore
 
-- At launch the app restores every existing workspace tab in its previous order
-  and focuses the last active one. References to folders or tabs that no longer
-  exist are removed.
-- If nothing can be restored, the app opens the default workspace folders set in
-  Settings > Workspaces: the first in the initial window, the rest as native tabs
-  in list order. The home folder opens only when that list is empty or none of
-  its folders still exist.
+- Settings > Workspaces > On Launch chooses one of two modes:
+  - "Reopen the last workspaces" (the default): the app restores every existing
+    workspace tab in its previous order and focuses the last active one. References
+    to folders or tabs that no longer exist are removed. If nothing can be restored,
+    the default workspace folders are opened (below).
+  - "Always open the default workspaces": the previous session's workspaces are
+    ignored and the default workspace folders are opened (below). The per-workspace
+    state of those folders, such as their tabs, is still restored.
+- The default workspace folders, opened in list order: the first in the initial
+  window, the rest as native tabs. Folders that no longer exist are skipped. The
+  home folder opens only when that list is empty or none of its folders still exist.
 - What else survives a restart is listed in
   [settings-and-persistence.md](/docs/behavior/settings-and-persistence.md).
 

@@ -89,6 +89,7 @@ struct ToolbarIconButton: View {
         .focusable(false)
         .contentShape(Rectangle())
         .help(help)
+        .accessibilityLabel(help)
     }
 }
 

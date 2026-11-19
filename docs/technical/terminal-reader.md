@@ -93,6 +93,6 @@ before touching the disk.
 - If the Downloads folder cannot be created, the alert says that Downloads could
   not be found. It is also shown for other file errors, which is the current
   wording rather than an intended message.
-- If the picker is not detected, the engine sends one blind Return about 0.6 seconds in when nothing was copied, so a changed picker wording does not leave the CLI stuck. Return on an empty Claude Code prompt does nothing.
+- For Claude Code the engine does not wait for the copy picker to be detected: while nothing is copied it sends a blind Return about 0.2, 0.5, and 1.0 seconds after the Return that runs `/copy` (polling every 40 ms), and also confirms the picker when Accessibility sees it. Return on an empty Claude Code prompt does nothing, so the extra presses are harmless when `/copy` copies directly. A wording change in the picker therefore does not leave the CLI stuck.
 - The Claude Code picker is detected by its text. A change in the CLI's wording
   breaks detection, and the user then has to select the copy option by hand.

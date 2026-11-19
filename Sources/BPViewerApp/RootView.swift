@@ -6,11 +6,14 @@ struct RootView: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
+        let chrome = model.chromeLayout
         VStack(spacing: 0) {
-            WorkspaceHeaderBar()
-            Divider()
+            if chrome.showsHeader {
+                WorkspaceHeaderBar()
+                Divider()
+            }
             HStack(spacing: 0) {
-                if model.sidebarVisible {
+                if chrome.showsSidebar {
                     ResizableSidebarView()
                 }
 
@@ -19,6 +22,14 @@ struct RootView: View {
         }
         .background(BPTokens.Color.canvas)
         .background(WindowCloseGuard(model: model))
+        .overlay(alignment: .topTrailing) {
+            if chrome.showsFocusExitButton {
+                FocusExitButton()
+            }
+        }
+        // Runs only for an Esc that no focused view consumed (editors, find field and
+        // sheets come first in the responder chain). A no-op when focus mode is off.
+        .onExitCommand { model.exitFocusMode() }
         .preferredColorScheme(model.theme.colorScheme)
         .frame(minWidth: WorkspaceWindowMetrics.minimumWidth, minHeight: WorkspaceWindowMetrics.minimumHeight)
         .onDrop(of: [UTType.fileURL.identifier], isTargeted: nil) { providers in

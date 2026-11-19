@@ -59,6 +59,8 @@ public struct GlobalState: Codable, Sendable {
     public var defaultLatexZoom = 1.0
     /// Opened when the previous session cannot be restored; empty means the home folder.
     public var defaultWorkspaceFolders: [String] = []
+    /// Raw value of `LaunchBehavior`; absent in older state, which reopens the last session.
+    public var launchBehavior = LaunchBehavior.reopenLast.rawValue
     /// Raw values of the `DocumentKind`s shown by "Show selected files only".
     public var selectedFileKinds: [String] = DocumentKind.selectableKinds.map(\.rawValue)
     /// Extra extensions shown by "Show selected files only", for files the app does not support.
@@ -67,7 +69,7 @@ public struct GlobalState: Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case theme, sidebarVisible, sidebarWidth, latexShellEscapeMode
         case defaultMarkdownZoom, defaultLatexZoom, defaultWorkspaceFolders, selectedFileKinds
-        case extraFileExtensions
+        case extraFileExtensions, launchBehavior
     }
 
     public init() {}
@@ -81,6 +83,8 @@ public struct GlobalState: Codable, Sendable {
         defaultMarkdownZoom = try container.decodeIfPresent(Double.self, forKey: .defaultMarkdownZoom) ?? 1.0
         defaultLatexZoom = try container.decodeIfPresent(Double.self, forKey: .defaultLatexZoom) ?? 1.0
         defaultWorkspaceFolders = try container.decodeIfPresent([String].self, forKey: .defaultWorkspaceFolders) ?? []
+        launchBehavior = try container.decodeIfPresent(String.self, forKey: .launchBehavior)
+            ?? LaunchBehavior.reopenLast.rawValue
         selectedFileKinds = try container.decodeIfPresent([String].self, forKey: .selectedFileKinds)
             ?? DocumentKind.selectableKinds.map(\.rawValue)
         extraFileExtensions = try container.decodeIfPresent([String].self, forKey: .extraFileExtensions) ?? []

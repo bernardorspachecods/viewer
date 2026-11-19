@@ -5,7 +5,7 @@ struct DocumentWorkspaceView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if !model.presentation.isReader {
+            if model.chromeLayout.showsTabBar {
                 TabBarView()
                 Divider()
             }

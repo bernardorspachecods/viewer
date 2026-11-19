@@ -42,3 +42,33 @@ extension AppModel {
     }
 
 }
+
+extension AppModel {
+    /// The chrome this window shows. Read by RootView and the workspace surface so both
+    /// apply the same focus-mode rule.
+    var chromeLayout: WindowChromeLayout {
+        WindowChromeLayout(
+            isFocusMode: isFocusMode,
+            sidebarVisible: sidebarVisible,
+            isReader: presentation.isReader
+        )
+    }
+
+    /// Focus mode is per window and is not stored: every launch starts with it off.
+    /// It does not write `sidebarVisible`, so the saved sidebar state is untouched.
+    func setFocusMode(_ isOn: Bool) {
+        guard isFocusMode != isOn else { return }
+        isFocusMode = isOn
+        focusChrome?.reconcile()
+    }
+
+    func toggleFocusMode() {
+        setFocusMode(!isFocusMode)
+    }
+
+    /// Esc route: a no-op unless focus mode is on. Called only after the editors,
+    /// the find bar and the dialogs have had their chance at the key.
+    func exitFocusMode() {
+        setFocusMode(false)
+    }
+}

@@ -196,6 +196,13 @@ struct WorkspaceHeaderBar: View {
             }
         }
 
+        ToolbarIconButton(
+            systemName: "arrow.up.left.and.arrow.down.right",
+            help: "\(AppShortcuts.focusMode.title) (\(AppShortcuts.focusMode.display))"
+        ) {
+            model.toggleFocusMode()
+        }
+
         ToolbarIconButton(systemName: model.theme == .dark ? "sun.max" : "moon", help: "Toggle Theme") {
             model.cycleTheme()
         }

@@ -28,7 +28,15 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
 
     let session: WorkspaceSessionCoordinator
     var openMainWindow: (() -> Void)?
-    @Published private(set) var activeModel: AppModel?
+    @Published private(set) var activeModel: AppModel? {
+        didSet {
+            if let activeModel, activeModel.presentation == .workspace {
+                lastWorkspaceModel = activeModel
+            }
+        }
+    }
+    /// The last focused ordinary workspace model, so a capture tab never lands in a reader window.
+    weak var lastWorkspaceModel: AppModel?
 
     // Internal, not private: the terminal reader's window host extends this
     // type in TerminalReader/, and it reads the same window state.
@@ -277,16 +285,27 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
 
     private func restoreWorkspaces(anchoredAt initialModel: AppModel) {
         let initialRootPath = initialModel.rootURL.map(session.workspaceKey(for:))
-        let storedPaths = session.openWorkspacePaths
-        let validPaths = storedPaths.filter { path in
-            let url = URL(fileURLWithPath: path)
-            return isDirectory(url)
-        }
+        let validPaths = session.openWorkspacePaths.filter { isDirectory(URL(fileURLWithPath: $0)) }
+        let validDefaults = session.defaultWorkspaceFolderPaths
+            .map(URL.init(fileURLWithPath:))
+            .filter { isDirectory($0) }
+            .map(\.path)
 
-        // Nothing to restore: fall back to the default workspace folders.
-        if initialModel.rootURL == nil, validPaths.isEmpty {
-            openDefaultWorkspaces(anchoredAt: initialModel)
+        let source = LaunchFolderPlanner.source(
+            behavior: session.launchBehavior,
+            existingSessionPaths: validPaths,
+            existingDefaultPaths: validDefaults
+        )
+        switch source {
+        case let .defaultFolders(folders) where initialModel.rootURL == nil:
+            openDefaultWorkspaces(folders.map(URL.init(fileURLWithPath:)), anchoredAt: initialModel)
             return
+        case .homeFolder where initialModel.rootURL == nil:
+            initialModel.openRoot(FileManager.default.homeDirectoryForCurrentUser)
+            persistWorkspaceLayout()
+            return
+        case .homeFolder, .defaultFolders, .previousSession:
+            break
         }
 
         for path in validPaths where path != initialRootPath {
@@ -304,21 +323,12 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         persistWorkspaceLayout()
     }
 
-    /// Opens the existing default workspace folders, the first in the initial
-    /// window and the rest as native tabs, in list order. The home folder is the
-    /// last resort when the list is empty or none of its folders exist.
-    private func openDefaultWorkspaces(anchoredAt initialModel: AppModel) {
-        let folders = session.defaultWorkspaceFolderPaths
-            .map(URL.init(fileURLWithPath:))
-            .filter { isDirectory($0) }
-
-        guard let first = folders.first else {
-            if initialModel.rootURL == nil {
-                initialModel.openRoot(FileManager.default.homeDirectoryForCurrentUser)
-            }
-            persistWorkspaceLayout()
-            return
-        }
+    /// Opens the given existing default workspace folders, the first in the
+    /// initial window and the rest as native tabs, in list order. The caller
+    /// has already checked that the folders exist and chosen the home folder
+    /// when there are none.
+    private func openDefaultWorkspaces(_ folders: [URL], anchoredAt initialModel: AppModel) {
+        guard let first = folders.first else { return }
 
         for folder in folders {
             openWorkspace(folder, from: initialModel)

@@ -31,6 +31,7 @@ struct DocumentOutlineToolbar: View {
 }
 
 struct DocumentInteractionToolbar: View {
+    @EnvironmentObject private var model: AppModel
     let isOutlineAvailable: Bool
     let isOutlineVisible: Bool
     let onToggleOutline: () -> Void
@@ -54,6 +55,13 @@ struct DocumentInteractionToolbar: View {
     }
 
     var body: some View {
+        // Focus mode shows only the document, so its mode and edit bar is hidden too.
+        if !model.isFocusMode {
+            toolbar
+        }
+    }
+
+    private var toolbar: some View {
         HStack(spacing: BPTokens.Spacing.sm) {
             HStack(spacing: BPTokens.Spacing.xxs) {
                 if isOutlineAvailable {

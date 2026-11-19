@@ -70,50 +70,6 @@ private struct ZoomSettingsView: View {
     }
 }
 
-private struct ShortcutsSettingsView: View {
-    var body: some View {
-        Form {
-            Section("General") {
-                ShortcutRow(title: "Open Folder", shortcut: "⌘O")
-                ShortcutRow(title: "Open Settings", shortcut: "⌘,")
-            }
-
-            Section("Markdown Editing") {
-                ShortcutRow(title: "Bold", shortcut: "⌘B")
-                ShortcutRow(title: "Italic", shortcut: "⌘I")
-                ShortcutRow(title: "Inline Code", shortcut: "⌘K")
-            }
-
-            Section("View") {
-                ShortcutRow(title: "Refresh Preview", shortcut: "⌘R")
-                ShortcutRow(title: "Find in Document", shortcut: "⌘F")
-                ShortcutRow(title: "Zoom In", shortcut: "⌘+")
-                ShortcutRow(title: "Zoom Out", shortcut: "⌘−")
-                ShortcutRow(title: "Reset Zoom", shortcut: "⌘0")
-                ShortcutRow(title: "Toggle Sidebar", shortcut: "⌥⌘B")
-                ShortcutRow(title: "Toggle Theme", shortcut: "⌥⌘T")
-            }
-
-            Section("Tabs") {
-                ShortcutRow(title: "Close Tab", shortcut: "⌘W")
-                ShortcutRow(title: "Next Tab", shortcut: "⌃Tab")
-                ShortcutRow(title: "Select Tab", shortcut: "⌘1–⌘9")
-            }
-
-            Section("Snapshots") {
-                ShortcutRow(title: "Close Floating Window", shortcut: "⌘W")
-                ShortcutRow(title: "Cancel Selection", shortcut: "Esc")
-            }
-
-            Text("Shortcuts are defined by the app and cannot be edited in this version.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .formStyle(.grouped)
-        .padding()
-    }
-}
-
 private struct AppearanceSettingsView: View {
     @EnvironmentObject private var model: AppModel
 
@@ -210,11 +166,35 @@ private struct FilesSettingsView: View {
     }
 }
 
+private extension LaunchBehavior {
+    var settingsLabel: String {
+        switch self {
+        case .reopenLast: "Reopen the last workspaces"
+        case .alwaysDefaults: "Always open the default workspaces"
+        }
+    }
+}
+
 private struct WorkspacesSettingsView: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
         Form {
+            Section("On Launch") {
+                Picker(
+                    "When Viewer starts",
+                    selection: Binding(
+                        get: { model.launchBehavior },
+                        set: { model.setLaunchBehavior($0) }
+                    )
+                ) {
+                    ForEach(LaunchBehavior.allCases, id: \.self) { behavior in
+                        Text(behavior.settingsLabel).tag(behavior)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+            }
+
             Section("Default Workspaces") {
                 if model.defaultWorkspaceFolders.isEmpty {
                     Text("No folders added. Viewer opens your home folder.")
@@ -241,7 +221,7 @@ private struct WorkspacesSettingsView: View {
                 Button("Add Folder…", action: chooseFolder)
             }
 
-            Text("Opened when Viewer cannot restore the previous session. Empty = your home folder.")
+            Text("Opened when Viewer has no previous session to reopen, or on every launch if you choose Always open the default workspaces. Empty = your home folder.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -289,21 +269,6 @@ private struct LatexSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
-    }
-}
-
-private struct ShortcutRow: View {
-    let title: String
-    let shortcut: String
-
-    var body: some View {
-        HStack {
-            Text(title)
-            Spacer()
-            Text(shortcut)
-                .font(.system(.body, design: .monospaced))
-                .foregroundStyle(.secondary)
-        }
     }
 }
 

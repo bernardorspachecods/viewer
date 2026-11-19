@@ -18,8 +18,10 @@ tags: [behavior, capture, snapshots, reader-window]
 - Codex replies go to `~/Downloads/Codex Responses`. Claude Code replies go to
   `~/Downloads/Claude Code Responses`. Each folder is created when needed. A file
   is named for its CLI, and gets a numeric suffix if that name already exists.
-- `⌥⌘E` opens the saved file in the last focused Viewer window when that window is
-  open. If that window is minimized, Viewer uses a standalone capture window instead.
+- `⌥⌘E` opens the saved file in the last focused workspace window when that window is
+  open. A reader window left focused by an earlier `⇧⌘E` is never the target; with no
+  workspace window at all, or when the workspace window is minimized, the reply
+  opens in a standalone capture window.
 - Captured replies open at the default Markdown zoom.
 - Sending keystrokes requires macOS Accessibility permission. After granting it,
   you may need to quit and reopen Viewer for it to take effect.

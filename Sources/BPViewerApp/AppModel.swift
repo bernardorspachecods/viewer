@@ -46,12 +46,16 @@ final class AppModel: ObservableObject {
     var finderRevealer: FinderRevealing = SystemFinderRevealer()
     @Published var treeScrollOffset: Double = 0
     @Published var sidebarVisible = true
+    /// Shows only the open document's preview (header, sidebar and tab bar hidden). Per window, not stored.
+    @Published var isFocusMode = false
     /// How this model's window presents it. Set once, when the window is created.
     @Published var presentation: WindowPresentation = .workspace
     @Published var sidebarWidth: Double = 280
     /// Default workspace folders, mirrored from the shared session so Settings
     /// reads the same list from any window.
     @Published var defaultWorkspaceFolders: [String]
+    /// What launch opens, mirrored from the shared session like the folder list.
+    @Published var launchBehavior: LaunchBehavior
     @Published var previewZoom: Double = 1.0
     @Published var defaultMarkdownZoom: Double = 1.0
     @Published var defaultLatexZoom: Double = 1.0
@@ -118,6 +122,8 @@ final class AppModel: ObservableObject {
     var markdownUndoGroupTimes: [String: TimeInterval] = [:]
     var activeSecurityScopedRootURL: URL?
     private weak var attachedWindow: NSWindow?
+    /// Keeps the attached window's title bar and tab strip in step with focus mode.
+    private(set) var focusChrome: WindowFocusChromeSync?
 
     init(
         documentDiffCoordinator: DocumentDiffCoordinator = DocumentDiffCoordinator(),
@@ -135,6 +141,7 @@ final class AppModel: ObservableObject {
         sidebarWidth = configuration.sidebarWidth
         latexShellEscapeMode = LatexShellEscapeMode(rawValue: configuration.latexShellEscapeMode) ?? .disabled
         defaultWorkspaceFolders = workspaceSession.defaultWorkspaceFolderPaths
+        launchBehavior = workspaceSession.launchBehavior
         selectedFileKinds = workspaceSession.selectedFileKinds
         extraFileExtensions = workspaceSession.extraFileExtensions
         defaultMarkdownZoom = min(max(configuration.defaultMarkdownZoom, 0.7), 2.0)
@@ -173,6 +180,7 @@ final class AppModel: ObservableObject {
         if let initialRootURL, isDirectory(initialRootURL) {
             openRoot(initialRootURL)
         } else if restoresLastWorkspace,
+                  workspaceSession.launchBehavior == .reopenLast,
                   let path = workspaceSession.activeWorkspacePath {
             let pathURL = URL(fileURLWithPath: path)
             let url = (try? workspaceSession.resolveSecurityScopedBookmark(for: pathURL))?.url ?? pathURL
@@ -197,7 +205,10 @@ final class AppModel: ObservableObject {
     }
 
     func attach(to window: NSWindow) {
+        guard attachedWindow !== window else { return }
         attachedWindow = window
+        focusChrome?.stop()
+        focusChrome = WindowFocusChromeSync(window: window, model: self)
     }
 
     func isRegularFile(_ url: URL) -> Bool {

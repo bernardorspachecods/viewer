@@ -33,12 +33,47 @@ final class FittingPDFView: FindTrackingPDFView {
     private var currentFindIndex = 0
     private var restoreGeneration = 0
 
+    override var acceptsFirstResponder: Bool { true }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        claimKeyboardFocus()
+    }
+
     override func mouseDown(with event: NSEvent) {
+        claimKeyboardFocus()
         if event.clickCount == 2 {
             let point = convert(event.locationInWindow, from: nil)
             onDoubleClick?(point)
         }
         super.mouseDown(with: event)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        guard let command = PDFPageKeyCommand.command(
+            keyCode: event.keyCode,
+            modifiers: event.modifierFlags
+        ) else {
+            super.keyDown(with: event)
+            return
+        }
+        let currentIndex = readingPosition(fallbackPageIndex: 0).pageIndex
+        guard let document,
+              let target = command.targetPageIndex(from: currentIndex, pageCount: document.pageCount) else {
+            return
+        }
+        goToPage(at: target)
+    }
+
+    /// Makes the PDF the key view so arrows work without a click. Skipped when a text
+    /// field or the find field is editing, so typing there is never taken over.
+    func claimKeyboardFocus() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let window = self.window,
+                  window.firstResponder !== self,
+                  !(window.firstResponder is NSTextView) else { return }
+            window.makeFirstResponder(self)
+        }
     }
 
     override func layout() {

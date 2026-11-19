@@ -15,6 +15,7 @@ description: "UI-independent Viewer logic: filesystem scanning, session and tab 
 
 - [FileSystemFoundation.swift](/Sources/BPViewerCore/FileSystemFoundation.swift) defines document types and recursive filesystem scanning.
 - [FolderCollapseRules.swift](/Sources/BPViewerCore/FolderCollapseRules.swift) holds the sidebar folder collapse button's step rules.
+- [AppShortcutCatalog.swift](/Sources/BPViewerCore/AppShortcutCatalog.swift) defines every keyboard shortcut the app responds to; the menu commands and the Settings Shortcuts tab both read it.
 - [WorkspaceSessionCoordinator.swift](/Sources/BPViewerCore/WorkspaceSessionCoordinator.swift) coordinates workspace state, persistence, permissions, and snapshots.
 - [DocumentOpenCoordinator.swift](/Sources/BPViewerCore/DocumentOpenCoordinator.swift) resolves URLs, supported types, and LaTeX context.
 - [MarkdownAdapter.swift](/Sources/BPViewerCore/MarkdownAdapter.swift) renders Markdown previews.

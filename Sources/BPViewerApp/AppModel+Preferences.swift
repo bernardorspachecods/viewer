@@ -18,6 +18,12 @@ extension AppModel {
         WorkspaceWindowManager.shared.synchronizeGlobalPreferences(from: self)
     }
 
+    func setLaunchBehavior(_ behavior: LaunchBehavior) {
+        workspaceSession.setLaunchBehavior(behavior)
+        launchBehavior = workspaceSession.launchBehavior
+        WorkspaceWindowManager.shared.synchronizeGlobalPreferences(from: self)
+    }
+
     func setLatexShellEscapeMode(_ mode: LatexShellEscapeMode) {
         guard latexShellEscapeMode != mode else { return }
         latexShellEscapeMode = mode
@@ -36,6 +42,7 @@ extension AppModel {
         defaultLatexZoom = source.defaultLatexZoom
         latexShellEscapeMode = source.latexShellEscapeMode
         defaultWorkspaceFolders = source.defaultWorkspaceFolders
+        launchBehavior = source.launchBehavior
         selectedFileKinds = source.selectedFileKinds
         extraFileExtensions = source.extraFileExtensions
         workspaceTreeSession.setSelectedFileKinds(selectedFileKinds)

@@ -9,9 +9,9 @@ import Foundation
 final class TerminalReplyController {
     private let windows: any TerminalReplyHost
     private let shortcut = TerminalReplyShortcut()
-    /// Poll attempt (100 ms each) at which a blind Return confirms Claude Code's
-    /// copy picker when it was not detected.
-    private static let claudePickerFallbackAttempt = 6
+    /// Poll attempts (40 ms each) at which a blind Return confirms Claude Code's
+    /// copy picker without waiting for it to be detected.
+    private static let claudeBlindReturnAttempts: Set<Int> = [4, 12, 24]
     private var isCapturing = false
     private var didRequestAccessibilityPermission = false
     private var lastShortcutHandledAt: TimeInterval = 0
@@ -65,26 +65,25 @@ final class TerminalReplyController {
         let terminalProcessID = terminal.processIdentifier
         Task { @MainActor [weak self] in
             var didSelectClaudeCopyOption = false
-            for attempt in 0..<30 {
-                try? await Task.sleep(for: .milliseconds(100))
+            for attempt in 0..<75 {
+                try? await Task.sleep(for: .milliseconds(40))
                 guard let self else { return }
                 guard NSWorkspace.shared.frontmostApplication?.processIdentifier == terminalProcessID else {
                     self.isCapturing = false
                     return
                 }
 
-                if client == .claudeCode,
-                   !didSelectClaudeCopyOption,
-                   TerminalReplyAccessibility.isClaudeCopyPickerVisible(in: terminalProcessID) {
-                    didSelectClaudeCopyOption = TerminalReplyKeystrokes.sendReturnKey()
-                } else if client == .claudeCode,
-                          !didSelectClaudeCopyOption,
-                          attempt == Self.claudePickerFallbackAttempt,
-                          NSPasteboard.general.changeCount == originalClipboardChangeCount {
-                    // The picker was not detected (wording or Accessibility text
-                    // changed) and nothing was copied: confirm "Full response"
-                    // blindly. Return on an empty Claude Code prompt does nothing.
-                    didSelectClaudeCopyOption = TerminalReplyKeystrokes.sendReturnKey()
+                if client == .claudeCode, NSPasteboard.general.changeCount == originalClipboardChangeCount {
+                    // Confirm "Full response" without waiting for Accessibility to
+                    // see the picker: a blind Return early, and again later. Return
+                    // on an empty Claude Code prompt does nothing, so it is harmless
+                    // when /copy already copied directly.
+                    if Self.claudeBlindReturnAttempts.contains(attempt) {
+                        _ = TerminalReplyKeystrokes.sendReturnKey()
+                    } else if !didSelectClaudeCopyOption,
+                              TerminalReplyAccessibility.isClaudeCopyPickerVisible(in: terminalProcessID) {
+                        didSelectClaudeCopyOption = TerminalReplyKeystrokes.sendReturnKey()
+                    }
                 }
 
                 let clipboard = NSPasteboard.general

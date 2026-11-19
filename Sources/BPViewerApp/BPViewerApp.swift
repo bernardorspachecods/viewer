@@ -32,79 +32,84 @@ struct BPViewerApp: App {
                 Button("New Markdown File") {
                     windowManager.modelForActiveWindow(fallback: model)?.createNewMarkdownDocument()
                 }
-                    .keyboardShortcut("t", modifiers: [.command])
+                    .appShortcut(AppShortcuts.newMarkdownFile)
 
                 Button("New Workspace…") {
                     windowManager.chooseAndOpenWorkspace(
                         from: windowManager.modelForActiveWindow(fallback: model)
                     )
                 }
-                    .keyboardShortcut("t", modifiers: [.command, .shift])
+                    .appShortcut(AppShortcuts.newWorkspace)
 
                 Button("Open Folder…") {
                     windowManager.chooseAndOpenWorkspace(
                         from: windowManager.modelForActiveWindow(fallback: model)
                     )
                 }
-                    .keyboardShortcut("o", modifiers: [.command])
+                    .appShortcut(AppShortcuts.openFolder)
             }
 
             CommandMenu("View") {
                 Button("Refresh Preview") {
                     windowManager.modelForActiveWindow(fallback: model)?.refreshActiveTab()
                 }
-                    .keyboardShortcut("r", modifiers: [.command])
+                    .appShortcut(AppShortcuts.refreshPreview)
 
                     Button("Find in Document") {
                         windowManager.modelForActiveWindow(fallback: model)?.showFindBar()
                     }
-                    .keyboardShortcut("f", modifiers: [.command])
+                    .appShortcut(AppShortcuts.findInDocument)
 
                 Button("Zoom In") {
                     windowManager.modelForActiveWindow(fallback: model)?.zoomIn()
                 }
-                    .keyboardShortcut("+", modifiers: [.command])
+                    .appShortcut(AppShortcuts.zoomIn)
 
                 Button("Zoom Out") {
                     windowManager.modelForActiveWindow(fallback: model)?.zoomOut()
                 }
-                    .keyboardShortcut("-", modifiers: [.command])
+                    .appShortcut(AppShortcuts.zoomOut)
 
                 Button("Reset Zoom") {
                     windowManager.modelForActiveWindow(fallback: model)?.resetPreviewZoom()
                 }
-                    .keyboardShortcut("0", modifiers: [.command])
+                    .appShortcut(AppShortcuts.resetZoom)
 
                 Button("Toggle Sidebar") {
                     guard let activeModel = windowManager.modelForActiveWindow(fallback: model) else { return }
                     activeModel.setSidebarVisible(!activeModel.sidebarVisible)
                 }
-                    .keyboardShortcut("b", modifiers: [.command, .option])
+                    .appShortcut(AppShortcuts.toggleSidebar)
+
+                Button("Focus Mode") {
+                    windowManager.modelForActiveWindow(fallback: model)?.toggleFocusMode()
+                }
+                .appShortcut(AppShortcuts.focusMode)
 
                 Button("Toggle Theme") {
                     windowManager.modelForActiveWindow(fallback: model)?.cycleTheme()
                 }
-                    .keyboardShortcut("t", modifiers: [.command, .option])
+                    .appShortcut(AppShortcuts.toggleTheme)
             }
 
             CommandGroup(replacing: .windowArrangement) {
                 Button("Close Tab") {
                     windowManager.closeActiveTabInKeyWindow()
                 }
-                .keyboardShortcut("w", modifiers: [.command])
+                .appShortcut(AppShortcuts.closeTab)
             }
 
             CommandMenu("Tabs") {
                     Button("Next Tab") {
                         windowManager.modelForActiveWindow(fallback: model)?.selectNextTab()
                     }
-                    .keyboardShortcut(.tab, modifiers: [.control])
+                    .appShortcut(AppShortcuts.nextTab)
 
                 ForEach(Array((windowManager.activeModel ?? model).tabs.prefix(9).enumerated()), id: \.element.id) { index, tab in
                     Button("\(index + 1): \(tab.title)") {
                         windowManager.modelForActiveWindow(fallback: model)?.selectTab(number: index)
                     }
-                    .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: [.command])
+                    .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: AppShortcuts.selectTab.menuModifiers)
                 }
             }
         }

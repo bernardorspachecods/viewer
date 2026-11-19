@@ -71,7 +71,7 @@ enum TerminalReplyKeystrokes {
         textKeyUp.post(tap: .cghidEventTap)
 
         // Give the slash-command menu time to recognize the command.
-        Thread.sleep(forTimeInterval: 0.15)
+        Thread.sleep(forTimeInterval: 0.1)
         returnKeyDown.flags = []
         returnKeyUp.flags = []
         returnKeyDown.post(tap: .cghidEventTap)

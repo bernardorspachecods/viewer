@@ -72,6 +72,7 @@ struct PDFKitPreviewView: NSViewRepresentable {
             view.isRestoringPosition = true
             view.document = PDFDocument(data: data)
             view.loadedPDFData = data
+            view.claimKeyboardFocus()
         }
         view.zoom = zoom
         if documentChanged || zoomChanged {

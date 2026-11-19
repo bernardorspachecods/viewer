@@ -62,6 +62,13 @@ Authorization of files outside the project is in
 - The PDF supports an outline, search, copy, printing, zoom, and reading position
   restoration. Local links are handled in the app; external links open in the
   browser.
+- Right arrow shows the next page and Left arrow the previous one. Each step puts the
+  top of that page at the top of the view. Arrows at the first or last page do
+  nothing.
+- The PDF takes the keyboard when it opens and when it is clicked, so the arrows work
+  without a first click. While a text field or the find field is editing, the arrows
+  go to that field instead. Arrows with ⌘, ⌥, ⌃, or ⇧ are not page steps.
+- The arrows work in focus mode too (see [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md)).
 
 ## Limits
 

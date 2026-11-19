@@ -42,6 +42,7 @@ struct Runner {
         runTerminalReplyContracts()
         runDocumentZoomContracts()
         runFolderCollapseContracts()
+        runLaunchFolderContracts()
 
         print("Foundation contracts: " + String(passed) + " passed, " + String(failed) + " failed")
         if failed > 0 {

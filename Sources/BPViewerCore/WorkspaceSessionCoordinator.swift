@@ -94,6 +94,15 @@ public final class WorkspaceSessionCoordinator {
         state.global.defaultWorkspaceFolders
     }
 
+    /// What launch opens. Unknown stored values fall back to reopening the last session.
+    public var launchBehavior: LaunchBehavior {
+        LaunchBehavior(rawValue: state.global.launchBehavior) ?? .reopenLast
+    }
+
+    public func setLaunchBehavior(_ behavior: LaunchBehavior) {
+        updateGlobal { $0.launchBehavior = behavior.rawValue }
+    }
+
     public func addDefaultWorkspaceFolder(_ rootURL: URL) {
         let path = workspaceKey(for: rootURL)
         updateGlobal { global in
