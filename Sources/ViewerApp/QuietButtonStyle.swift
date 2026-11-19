@@ -9,7 +9,6 @@ struct QuietButtonStyle: ButtonStyle {
     var horizontalPadding: CGFloat = 0
     var minimumHeight: CGFloat? = nil
     var symbolSize: CGFloat? = nil
-    var emphasisWeight: Font.Weight? = nil
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -20,8 +19,7 @@ struct QuietButtonStyle: ButtonStyle {
                 isSelected: isSelected,
                 isDestructive: configuration.role == .destructive,
                 restingOpacity: restingOpacity,
-                symbolSize: symbolSize,
-                emphasisWeight: emphasisWeight
+                symbolSize: symbolSize
             ))
     }
 }
@@ -37,7 +35,6 @@ struct QuietControlFeedback: ViewModifier {
     var isDestructive = false
     var restingOpacity = 1.0
     var symbolSize: CGFloat? = nil
-    var emphasisWeight: Font.Weight? = nil
 
     private var hasPointerEmphasis: Bool {
         isEnabled && (isHovered || isPressed)
@@ -51,10 +48,8 @@ struct QuietControlFeedback: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        let weight: Font.Weight = hasPointerEmphasis || isSelected ? (emphasisWeight ?? .medium) : .regular
         content
-            .font(symbolSize.map { .system(size: $0, weight: weight) } ?? inheritedFont)
-            .fontWeight(weight)
+            .font(symbolSize.map { .system(size: $0) } ?? inheritedFont)
             .foregroundStyle(foreground)
             .opacity(isEnabled ? (hasPointerEmphasis ? 1 : restingOpacity) : 0.55)
             .contentShape(Rectangle())

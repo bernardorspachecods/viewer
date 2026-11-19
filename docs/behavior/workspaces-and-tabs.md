@@ -27,8 +27,7 @@ tags: [behavior, workspaces, tabs]
 
 - Buttons in the header, sidebar toolbar, document tab strip, and editing controls
   use a muted foreground at rest. The foreground gains contrast under the pointer
-  and when pressed, with a slight increase in weight on action buttons. Tab titles
-  keep their regular weight. Active editing modes stay emphasized.
+  and when pressed. Active editing modes keep a stronger foreground.
 - One row above the sidebar and the document area. In a workspace window it
   shows the sidebar toggle, the folder button, the workspace name and path (copy
   on hover), then the active document's title and path.
@@ -43,6 +42,8 @@ tags: [behavior, workspaces, tabs]
 
 - Each file has at most one tab. Tabs can be selected, reordered by dragging,
   closed one at a time, closed to the right, or closed except the selected tab.
+  A thin line in the theme's primary foreground color identifies the active
+  document tab.
 - `⌘W` closes the active document tab in the key window. When the window has no
   document tabs left, `⌘W` closes the workspace window instead, including when it
   is the only workspace window. The unsaved-changes rules in
@@ -51,9 +52,10 @@ tags: [behavior, workspaces, tabs]
 - A tab's context menu has copy path, reveal in sidebar (selects the file in the
   sidebar tree), reveal in Finder, reload, rename, duplicate, move to Trash, close
   tab, and close other tabs. An untitled tab has only the two close actions.
-- The `+` button at the end of the tab bar creates an in-memory Markdown tab with
-  no path. The first `Save` opens a panel to choose the `.md` file. Such a tab is
-  not restored after a restart.
+- Each document tab has its close button on the right. The `+` button stays at
+  the right edge while the tabs scroll. Click it to create an in-memory Markdown
+  tab, or drop a tab there to move it to the end. The first `Save` asks where to
+  write the file. Unsaved untitled tabs are not restored after a restart.
 
 ## Focus mode
 

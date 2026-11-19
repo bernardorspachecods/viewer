@@ -4,90 +4,90 @@ import SwiftUI
 struct TabBarView: View {
     @EnvironmentObject private var model: AppModel
     @State private var dropTargetID: String?
-    @State private var indicatorTabID: String?
-    @Namespace private var activeTabIndicator
 
     private let endDropTargetID = "__tab_end__"
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
-                ForEach(model.tabs) { tab in
-                    TabItemView(
-                        tab: tab,
-                        isIndicatorActive: indicatorTabID == tab.id,
-                        isDropTarget: dropTargetID == tab.id,
-                        activeTabIndicator: activeTabIndicator,
-                        onSelect: { selectTab(tab.id) }
-                    )
-                    .draggable(tab.id) {
-                        Text(tab.title)
-                            .padding(.horizontal, BPTokens.Spacing.sm)
-                            .padding(.vertical, BPTokens.Spacing.xs)
-                            .background(BPTokens.Color.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: BPTokens.Radius.sm))
-                    }
-                    .dropDestination(for: String.self) { items, _ in
-                        guard let sourceID = items.first, sourceID != tab.id else { return false }
-                        model.moveTab(id: sourceID, before: tab.id)
-                        dropTargetID = nil
-                        return true
-                    } isTargeted: { isTargeted in
-                        if isTargeted {
-                            updateDropTarget(tab.id)
-                        } else if dropTargetID == tab.id {
-                            updateDropTarget(nil)
-                        }
-                    }
-                }
-
-                ToolbarIconButton(systemName: "plus", help: "New Markdown File") {
-                    model.createNewMarkdownDocument()
-                }
-                .padding(.leading, BPTokens.Spacing.sm)
-
-                Rectangle()
-                    .fill(.clear)
-                    .frame(minWidth: 36, maxWidth: .infinity, minHeight: 36)
-                    .contentShape(Rectangle())
-                    .dropDestination(for: String.self) { items, _ in
-                        guard let sourceID = items.first else { return false }
-                        model.moveTabToEnd(id: sourceID)
-                        dropTargetID = nil
-                        return true
-                    } isTargeted: { isTargeted in
-                        updateDropTarget(isTargeted ? endDropTargetID : nil)
-                    }
-                    .overlay(alignment: .leading) {
-                        Rectangle()
-                            .fill(Color.accentColor)
-                            .frame(width: 3, height: 28)
-                            .opacity(dropTargetID == endDropTargetID ? 1 : 0)
-                            .scaleEffect(x: dropTargetID == endDropTargetID ? 1 : 0.35, anchor: .leading)
-                            .animation(.easeInOut(duration: 0.14), value: dropTargetID == endDropTargetID)
-                    }
-            }
-            .padding(.horizontal, BPTokens.Spacing.xs)
+        HStack(spacing: 0) {
+            documentTabs
+            newDocumentButton
         }
         .frame(height: 38)
         .background(BPTokens.Color.surface)
         .zIndex(1)
-        .onAppear {
-            indicatorTabID = model.activeTabID
-        }
-        .onChange(of: model.activeTabID) { _, newTabID in
-            guard newTabID != indicatorTabID else { return }
-            withAnimation(.easeOut(duration: 0.16)) {
-                indicatorTabID = newTabID
-            }
-        }
     }
 
-    private func selectTab(_ tabID: String) {
-        withAnimation(.easeOut(duration: 0.16)) {
-            indicatorTabID = tabID
+    private var documentTabs: some View {
+        ScrollViewReader { scrollView in
+            ScrollView(.horizontal, showsIndicators: false) {
+                tabItems
+            }
+            .onChange(of: model.activeTabID, initial: true) { _, activeTabID in
+                if let activeTabID {
+                    scrollView.scrollTo(activeTabID)
+                }
+            }
         }
-        model.selectTab(id: tabID)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var tabItems: some View {
+        HStack(spacing: 0) {
+            ForEach(model.tabs) { tab in
+                TabItemView(
+                    tab: tab,
+                    isSelected: model.activeTabID == tab.id,
+                    isDropTarget: dropTargetID == tab.id
+                )
+                .draggable(tab.id) {
+                    Text(tab.title)
+                        .padding(.horizontal, BPTokens.Spacing.sm)
+                        .padding(.vertical, BPTokens.Spacing.xs)
+                        .background(BPTokens.Color.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: BPTokens.Radius.sm))
+                }
+                .dropDestination(for: String.self) { items, _ in
+                    guard let sourceID = items.first, sourceID != tab.id else { return false }
+                    model.moveTab(id: sourceID, before: tab.id)
+                    dropTargetID = nil
+                    return true
+                } isTargeted: { isTargeted in
+                    if isTargeted {
+                        updateDropTarget(tab.id)
+                    } else if dropTargetID == tab.id {
+                        updateDropTarget(nil)
+                    }
+                }
+                .id(tab.id)
+            }
+        }
+        .padding(.horizontal, BPTokens.Spacing.xs)
+    }
+
+    private var newDocumentButton: some View {
+        ToolbarIconButton(systemName: "plus", help: "New Markdown File") {
+            model.createNewMarkdownDocument()
+        }
+        .padding(.horizontal, BPTokens.Spacing.xs)
+        .frame(maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .dropDestination(for: String.self) { items, _ in
+            guard let sourceID = items.first else { return false }
+            model.moveTabToEnd(id: sourceID)
+            dropTargetID = nil
+            return true
+        } isTargeted: { isTargeted in
+            if isTargeted || dropTargetID == endDropTargetID {
+                updateDropTarget(isTargeted ? endDropTargetID : nil)
+            }
+        }
+        .overlay(alignment: .leading) {
+            let isDropTarget = dropTargetID == endDropTargetID
+            Rectangle()
+                .fill(isDropTarget ? Color.accentColor : BPTokens.Color.separator)
+                .frame(width: isDropTarget ? 3 : 1, height: isDropTarget ? 26 : 18)
+                .allowsHitTesting(false)
+        }
     }
 
     private func updateDropTarget(_ targetID: String?) {
@@ -100,56 +100,54 @@ struct TabBarView: View {
 struct TabItemView: View {
     @EnvironmentObject private var model: AppModel
     let tab: DocumentTab
-    let isIndicatorActive: Bool
+    let isSelected: Bool
     let isDropTarget: Bool
-    let activeTabIndicator: Namespace.ID
-    let onSelect: () -> Void
 
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: BPTokens.Spacing.xxs) {
             Button {
-                onSelect()
+                model.selectTab(id: tab.id)
             } label: {
                 HStack(spacing: BPTokens.Spacing.xs) {
                     Image(systemName: iconName)
+                        .frame(width: 14)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(tab.title)
                             .lineLimit(1)
                         if tab.subtitle != tab.title {
                             Text(tab.subtitle)
                                 .font(.caption2)
+                                .foregroundStyle(BPTokens.Color.muted)
+                                .lineLimit(1)
                         }
                     }
                 }
                 .font(BPTokens.Typography.caption)
-                .padding(.leading, BPTokens.Spacing.xs)
                 .frame(maxWidth: .infinity, minHeight: BPTokens.Size.control, alignment: .leading)
             }
-            .buttonStyle(QuietButtonStyle(isSelected: isIndicatorActive, emphasisWeight: .regular))
+            .buttonStyle(QuietButtonStyle(isSelected: isSelected))
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
 
             Button {
                 model.closeTab(tab)
             } label: {
                 Image(systemName: "xmark")
-                    .frame(width: 24, height: 24)
+                    .frame(width: 24, height: BPTokens.Size.control)
             }
             .buttonStyle(QuietButtonStyle(symbolSize: 9))
+            .accessibilityLabel("Close \(tab.title)")
+            .help("Close Tab")
         }
         .padding(.horizontal, BPTokens.Spacing.xs)
-        .frame(minWidth: 150, minHeight: 36)
+        .frame(width: 164, height: 38)
         .overlay(alignment: .bottom) {
-            if isIndicatorActive {
-                Rectangle()
-                    .fill(Color.accentColor)
-                    .frame(height: 2)
-                    .offset(y: 2)
-                    .matchedGeometryEffect(
-                        id: "active-tab-indicator",
-                        in: activeTabIndicator,
-                        properties: .position,
-                        anchor: .bottom
-                    )
-            }
+            Rectangle()
+                .fill(Color.primary)
+                .frame(height: 1)
+                .padding(.horizontal, BPTokens.Spacing.xxs)
+                .opacity(isSelected ? 1 : 0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
         .overlay(alignment: .leading) {
             if isDropTarget {
@@ -159,7 +157,7 @@ struct TabItemView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.35, anchor: .leading)))
             }
         }
-        .animation(.easeOut(duration: 0.16), value: isIndicatorActive)
+        .animation(.easeOut(duration: 0.16), value: isSelected)
         .modifier(WorkspaceContextMenuModifier(target: .tab(tab)))
     }
 
