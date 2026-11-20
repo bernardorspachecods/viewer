@@ -77,10 +77,28 @@ that produces it. Module boundaries and coordination are in
 
 ## Surfaces and coupling
 
-- Markdown: Quick Edit changes are sent to `AppModel` and applied to the Markdown
-  source in Core, not in the view. The shared search bar sits on the tab surface and
-  follows focus between editor and preview in split view.
-- Raw editing and diff: Markdown source, JSON, and the diff use one shared AppKit
+- Markdown: the editor is `MarkdownLiveEditor`, a wrapper over the engine's
+  `NativeTextViewWrapper` bound to the draft. Edits go to `AppModel`, not the view.
+  `MarkdownLiveEditorBridge` reaches the engine's `NSTextView` for what the wrapper
+  does not expose: `Esc`, `⌘B`/`⌘I`/`⌘K`, find, and the caret jump from the outline
+  (offset mapping is pure logic in `MarkdownEditorCursor`, Core). The engine is
+  `nodes-app/swift-markdown-engine`, pinned to one `revision` in `Package.swift`;
+  updating it is a deliberate change. Each editor instance has its own notification names
+  (`MarkdownLiveEditorBus`), because the engine listens on the whole app. The app's global
+  `⌘Z` uses the draft's stack while that has entries; when it is empty, `⌘Z` and
+  Edit > Undo fall through to the engine's own undo. `⌘S` and `⌘Z` do not copy the
+  engine's text into the draft: that text is display text, and the binding already carries
+  the storage text (`MarkdownDraftFlushPolicy`). The shared search bar sits on the tab surface and
+  follows focus between the two panes in Split View.
+- Split View is state of `DocumentTabSession` (Core): `activeTabID` stays the focused pane,
+  `splitPartnerID` is the other pane's tab and `activeSide` says which side the focused tab is
+  on, so every active-tab behavior (zoom, search, save, header) works on the focused pane
+  unchanged. Selecting the partner swaps focus without moving a pane. `AppModel` renders and
+  watches both visible tabs (a second `ActiveDocumentWatcher` for the partner). A tab is
+  dragged as `TabDragItem`, a custom type, because web views and text editors accept plain
+  strings and would swallow the drop; a local mouse-down monitor (`PaneFocusTracker`) moves
+  focus on a click without consuming it. The split is not persisted.
+- Raw editing and diff: JSON, LaTeX source, and the diff use one shared AppKit
   editor, which draws the line gutter and the Git-style decorations. The diff uses
   one view for Markdown and JSON. Both sides use the same per-line height map, so
   corresponding lines stay aligned while either side scrolls.

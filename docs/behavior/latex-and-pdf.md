@@ -1,6 +1,6 @@
 ---
 bkf: document
-description: "User-visible LaTeX and PDF behavior: root selection, compilation and its errors, the split view with debounced recompilation, SyncTeX jumps including bibliography entries, and the limits of each."
+description: "User-visible LaTeX and PDF behavior: root selection, compilation and its errors, the Source + PDF view with debounced recompilation, SyncTeX jumps including bibliography entries, and the limits of each."
 tags: [behavior, latex, pdf]
 ---
 
@@ -15,7 +15,7 @@ Authorization of files outside the project is in
 | If you need... | Section |
 | --- | --- |
 | Which file is compiled | [Roots](#roots) |
-| Compilation, errors, and split view | [Compiling and split view](#compiling-and-split-view) |
+| Compilation, errors, and the Source + PDF view | [Compiling and source with PDF](#compiling-and-source-with-pdf) |
 | Jumping between PDF and source | [SyncTeX and bibliography](#synctex-and-bibliography) |
 | PDF viewing | [PDF](#pdf) |
 | Known limits | [Limits](#limits) |
@@ -29,7 +29,7 @@ Authorization of files outside the project is in
 - The root selection is saved per workspace. An opened chapter stays the context of
   the root's tab instead of opening a second preview tab.
 
-## Compiling and split view
+## Compiling and source with PDF
 
 - The compiler is `latexmk` when it is available. Otherwise `pdflatex`, `xelatex`,
   or `lualatex` is used, depending on the installation and the document.
@@ -39,10 +39,11 @@ Authorization of files outside the project is in
   mode is a setting (see [settings-and-persistence.md](/docs/behavior/settings-and-persistence.md)).
 - Compilation errors are shown. You can expand and copy the diagnostic. When a
   compilation fails, the previous PDF stays visible.
-- Split view keeps the edited source on the left and the PDF on the right. Changes
+- The `Source + PDF` toolbar button keeps the edited source on the left and the PDF on the
+  right of one document (the `Split View` button is for two different files). Changes
   compile after a two-second debounce. Errors keep the last valid PDF.
 - Contextual source can be saved independently of the compilation result.
-- Toolbar: source or split view, Undo, Redo, Save, Discard Changes, Disk Diff, and
+- Toolbar: source or `Source + PDF`, Undo, Redo, Save, Discard Changes, Disk Diff, and
   Git Diff.
 
 ## SyncTeX and bibliography

@@ -93,6 +93,7 @@ private struct ZoomSettingsView: View {
 
 private struct AppearanceSettingsView: View {
     @EnvironmentObject private var model: AppModel
+    @AppStorage(TextWidthPreference.key) private var limitsTextWidth = TextWidthPreference.defaultLimitsTextWidth
 
     var body: some View {
         Form {
@@ -109,6 +110,13 @@ private struct AppearanceSettingsView: View {
                     }
                 }
                 .pickerStyle(.radioGroup)
+            }
+
+            Section("Markdown Text Width") {
+                Toggle("Keep text in a reading column", isOn: $limitsTextWidth)
+                Text("Off: the text of the preview and the editor runs to the window edges. On: it stays in a centered column.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Text("You can also quickly toggle the theme with ⌥⌘T.")

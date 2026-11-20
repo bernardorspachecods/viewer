@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
   <title id="title">Viewer · Markdown</title>
-  <desc id="desc">Livro aberto em marfim com o símbolo de Markdown no canto superior esquerdo da página esquerda.</desc>
-  <rect width="256" height="256" rx="58" fill="#000000"/>
-  <g fill="#F7F3E8">
+  <desc id="desc">Livro aberto em branco com o símbolo de Markdown no canto superior esquerdo da página esquerda.</desc>
+  <rect width="256" height="256" rx="58" fill="#1A1A1A"/>
+  <g fill="#F2F2F2">
     <path d="M58 76C78 67 100 69 122 82Q126 84 126 88V182Q126 188 120 184C99 173 79 172 60 181Q52 185 52 177V85Q52 79 58 76Z"/>
     <path d="M198 76C178 67 156 69 134 82Q130 84 130 88V182Q130 188 136 184C157 173 177 172 196 181Q204 185 204 177V85Q204 79 198 76Z"/>
   </g>
-  <g fill="none" stroke="#000000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+  <g fill="none" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
     <path d="M68.2 114V98L78 108L87.7 98V114"/>
     <path d="M103 98V114M96.2 106.5L103 114L109.8 106.5"/>
   </g>

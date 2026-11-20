@@ -88,5 +88,18 @@
 			<string>Alternate</string>
 		</dict>
 	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.bernardopacheco.viewer.tab</string>
+			<key>UTTypeDescription</key>
+			<string>Viewer tab</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -57,6 +57,54 @@ running with no window.
 **Reason:** Today it does, so the global reply shortcut keeps working; "Show Workspace
 Window" reopens it.
 
+### Decide whether the Markdown Editor button saves when clicked to leave
+
+**Result:** The owner decides whether clicking the `Markdown Editor` button to leave saves a changed draft, and the docs and the code state that decision.
+
+**Reason:** Today it leaves like `Esc`, which saves a changed draft.
+
+### Decide whether the Markdown editor gets the app's word completion back
+
+**Result:** The owner decides whether the Markdown editor has word completion again.
+
+**Reason:** Completion was part of the raw editor and is not in `swift-markdown-engine`.
+
+### Decide whether swift-markdown-engine stays pinned or is vendored
+
+**Result:** The owner decides whether the `swift-markdown-engine` dependency stays pinned or is vendored.
+
+**Reason:** It is one pinned revision, Apache 2.0, with a small upstream history.
+
+### Decide whether Markdown Editor opens at the position last read
+
+**Result:** The owner decides whether `Markdown Editor` opens at the position last read.
+
+**Reason:** Opening starts at the top today; only the outline jump moves the caret.
+
+### Decide whether Quick Edit's block layer goes
+
+**Result:** The owner decides whether Quick Edit's block layer is removed.
+
+**Reason:** `data-bp-editable` attributes, `markdownBlocks` and `MarkdownBlockDocument`'s visual-edit methods have no caller from the UI after Quick Edit.
+
+### Decide whether the new dependencies need an acknowledgements file
+
+**Result:** The owner decides whether a license acknowledgements file ships with the app.
+
+**Reason:** `swift-markdown-engine` (Apache 2.0), highlight.js (BSD-3) and SwiftMath (MIT, with math fonts under their own licenses) are bundled. A distributed build needs their license texts, for example in Resources.
+
+### Decide whether a link to a missing file says so
+
+**Result:** The owner decides whether clicking a link to a missing file shows a message.
+
+**Reason:** Today the click does nothing and shows no message (`openLocalPreview` returns silently).
+
+### Decide whether a link inside a reader window opens a new tab there
+
+**Result:** The owner decides what a link inside a reader window does.
+
+**Reason:** It opens a new tab, but a reader has no tab bar, so the earlier document cannot be reached.
+
 ## Needs a live check in the app
 
 These were verified by build, runners and tests only. Each entry needs a run in the app.
@@ -101,6 +149,18 @@ always visible and muted. Verified only by build, runners and tests so far.
 **Reason:** Check typing, completion, list continuation, the gutter and diff highlights,
 every preview kind, tab drag and drop, context menus, sidebar resize, and LaTeX sheets.
 Verified only by build, runners and tests so far.
+
+### Check Split View between two tabs in the app
+
+**Result:** Split View between two tabs is confirmed to work, or the fixes are made.
+
+**Reason:** Opening it from the tab context menu, moving focus, replacing a pane and closing it were driven in a test copy of the app on 2026-11-19. Not checked: dragging a tab onto the document area (whether the custom drag type reaches the drop target over a web view or the editor, and the highlight), a real click on a pane moving focus (the click tracker is covered by a unit test only), a PDF, LaTeX or CSV pane next to a Markdown one, and file changes on disk while a pane is not focused.
+
+### Check the Markdown editor (MarkdownLiveEditor) in the app
+
+**Result:** The Markdown editor is confirmed to work, or the fixes are made.
+
+**Reason:** It was driven in the real app on 2026-11-19 (reader window, split view, find, `⌘A`+`⌘B`, `⌘Z`, `Esc` save, Disk Diff with the old editor, a `/MAP.md` link opening the root file). Not checked yet: the caret after `⌘Z` (it went to the end of the document), the outline jump, two editor windows at once (`⌘B` must change only the focused one), local images, display math, dark mode, and `⌘S` with a `[[Page|Alias]]` link in the file.
 
 ## Known gaps
 

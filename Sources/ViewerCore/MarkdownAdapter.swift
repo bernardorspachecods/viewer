@@ -42,7 +42,12 @@ public protocol MarkdownAdapter: Sendable {
 }
 
 public struct SwiftMarkdownAdapter: MarkdownAdapter {
-    public init() {}
+    private let codeHighlighter: (any MarkdownCodeHighlighting)?
+
+    /// - Parameter codeHighlighter: Colors fenced code in the rendered HTML; `nil` leaves it plain.
+    public init(codeHighlighter: (any MarkdownCodeHighlighting)? = nil) {
+        self.codeHighlighter = codeHighlighter
+    }
 
     public func render(source: String, baseURL: URL) throws -> MarkdownRenderResult {
         let directoryBaseURL = baseURL.hasDirectoryPath
@@ -62,7 +67,8 @@ public struct SwiftMarkdownAdapter: MarkdownAdapter {
             baseURL: directoryBaseURL,
             source: source,
             editableBlocks: blockDocument.blocks,
-            specialRegions: blockDocument.specialRegions
+            specialRegions: blockDocument.specialRegions,
+            codeHighlighter: codeHighlighter
         )
         renderer.visit(document)
 

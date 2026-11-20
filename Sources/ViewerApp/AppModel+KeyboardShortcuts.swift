@@ -28,7 +28,7 @@ extension AppModel {
                 || session.isEditing {
             Task { @MainActor [weak self] in
                 if let textView = NSApp.keyWindow?.firstResponder as? NSTextView,
-                   textView.isEditable {
+                   MarkdownDraftFlushPolicy.shouldFlush(from: textView) {
                     self?.updateMarkdownEditing(
                         tabID: tabID,
                         text: textView.string,
@@ -81,7 +81,7 @@ extension AppModel {
             let redo = flags.contains(.shift)
             Task { @MainActor [weak self] in
                 if let textView = NSApp.keyWindow?.firstResponder as? NSTextView,
-                   textView.isEditable {
+                   MarkdownDraftFlushPolicy.shouldFlush(from: textView) {
                     self?.updateMarkdownEditing(
                         tabID: tabID,
                         text: textView.string,

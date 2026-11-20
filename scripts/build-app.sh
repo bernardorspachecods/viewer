@@ -41,6 +41,13 @@ else
 fi
 cp "$repo_root/Resources/$app_icon" "$app_bundle/Contents/Resources/Viewer.icns"
 
+# Resource bundles of the dependencies (highlight.js for code blocks, SwiftMath fonts). Their
+# SwiftPM accessors look in Contents/Resources of the app, and fall back to the build folder,
+# which does not exist on another machine or after the build folder is cleaned.
+for resource_bundle in "$binary_directory"/*.bundle(N); do
+    cp -R "$resource_bundle" "$app_bundle/Contents/Resources/"
+done
+
 # Use the existing stable Apple Development identity so macOS can associate
 # Accessibility permission with this app across rebuilds. Never fall back to
 # ad-hoc signing, which changes the app identity and causes a permission loop.

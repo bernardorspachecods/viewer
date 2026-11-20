@@ -23,12 +23,12 @@ extension AppModel {
     }
 
     func handleActiveDocumentChange(_ change: ActiveDocumentChange) {
-        guard activeTabID == change.tabID,
+        guard visibleTabIDs.contains(change.tabID),
               tabs.contains(where: { $0.id == change.tabID }) else { return }
 
         Task { @MainActor [weak self] in
             guard let self,
-                  self.activeTabID == change.tabID,
+                  self.visibleTabIDs.contains(change.tabID),
                   let currentTab = self.tabs.first(where: { $0.id == change.tabID }) else { return }
 
             switch currentTab.kind {

@@ -58,12 +58,13 @@ toolbars, and limits are in the format documents: [markdown.md](/docs/behavior/m
 
 ## Typing aids in raw editors
 
-- The raw-text editors (Markdown source, JSON, LaTeX source) use macOS spell
-  correction, system inline predictions, and native macOS completions.
+- The raw-text editors (JSON, LaTeX source, and the diff editors) use macOS spell
+  correction, system inline predictions, and native macOS completions. The Markdown
+  editor is a different one (see [markdown.md](/docs/behavior/markdown.md)).
 - The JSON and LaTeX editors also keep quote, dash, and text substitutions
   disabled, so source text is not rewritten while typing.
-- Markdown's dictionary-based word completion is described in
-  [markdown.md](/docs/behavior/markdown.md).
+- Markdown's dictionary-based word completion exists only in the right column of the
+  Markdown diff, which keeps the raw editor. The Markdown editor does not have it.
 
 ## Not supported
 

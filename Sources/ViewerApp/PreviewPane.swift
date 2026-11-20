@@ -4,10 +4,24 @@ import SwiftUI
 struct PreviewPane: View {
     @EnvironmentObject var model: AppModel
     let tab: DocumentTab
+    /// False for the non-focused pane of a split: its find is inert and it draws no focus mark.
+    var isFocusedPane: Bool = true
+
+    /// The find query this pane receives. Find applies to the focused pane only.
+    var paneFindQuery: String { isFocusedPane ? model.findQuery : "" }
+
+    /// Match counts from the non-focused pane must not overwrite the focused pane's count.
+    var paneFindMatchCount: @MainActor @Sendable (Int) -> Void {
+        let model = model
+        let isFocused = isFocusedPane
+        return { count in
+            if isFocused { model.setFindMatchCount(count) }
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            if model.isFindBarVisible {
+            if model.isFindBarVisible && isFocusedPane {
                 PreviewFindBar()
             }
 

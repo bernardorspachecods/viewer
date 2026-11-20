@@ -28,6 +28,7 @@ Structural rules for code and documents are in [AGENTS.md](/AGENTS.md). How to d
 | Agent rules for this repository: structural rules for code and documents, and the `scripts/restart-app.sh` step that ends a work round changing app use. | [AGENTS.md](/AGENTS.md) |
 | Manual validation fixtures for Markdown, link, and LaTeX previews: small input files, a local SVG, and a LaTeX project; these corpora contain no personal documents. | [MAP.md](/Fixtures/MAP.md) |
 | UI-independent Viewer logic: filesystem scanning, session and tab models, document opening, Markdown, LaTeX, JSON and CSV adapters, diffs, and editing merges. | [MAP.md](/Sources/ViewerCore/MAP.md) |
+| Why the swift-markdown-engine source is vendored in this repository, the upstream revision it started from, and every local change to it. | [viewer-patches.md](/Vendor/swift-markdown-engine/viewer-patches.md) |
 | What remains open after the 2026-11-18 work round: decisions the owner must make, behavior that needs a live check, and known gaps in tests and cleanup. | [backlog.md](/backlog.md) |
 | Current Viewer documentation: user-visible app behavior (one document per area) and technical architecture (one document per concern). | [MAP.md](/docs/MAP.md) |
 | Procedures specific to the Viewer repository for agents: how to decide what a document holds. | [MAP.md](/repo-library/MAP.md) |

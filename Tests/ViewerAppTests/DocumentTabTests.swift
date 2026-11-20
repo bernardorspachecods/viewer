@@ -328,3 +328,65 @@ func savesActiveCSVEditThroughSharedEditingAction() async throws {
     #expect(model.tabs[0].csvEditSession?.saveState == .saved)
     #expect(model.tabs[0].previewCSV?.rows[1][1] == "31")
 }
+
+@Test("the Markdown editor button opens the editor from the preview and leaves it again")
+@MainActor
+func togglesTheMarkdownEditor() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("viewer-toggle-" + UUID().uuidString)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let file = root.appendingPathComponent("note.md")
+    try "# Note".write(to: file, atomically: true, encoding: .utf8)
+    let model = AppModel()
+    model.openDocument(url: file)
+    let tab = try #require(model.activeTab)
+    #expect(tab.markdownEditSession?.isEditing != true)
+
+    model.toggleMarkdownEditor(tabID: tab.id)
+    #expect(model.activeTab?.markdownEditSession?.isEditing == true)
+    #expect(model.activeTab?.markdownEditSession?.mode == .markdown)
+
+    model.toggleMarkdownEditor(tabID: tab.id)
+    #expect(model.activeTab?.markdownEditSession?.isEditing != true)
+}
+
+@Test("split presentation is only for LaTeX; Markdown and JSON sessions stay in source mode")
+func splitPresentationIsOnlyForLatex() {
+    let markdownTab = DocumentTab(
+        id: "file:///tmp/project/split.md",
+        url: URL(fileURLWithPath: "/tmp/project/split.md"),
+        kind: .markdown,
+        markdownEditSession: MarkdownEditSession(
+            mode: .split,
+            baseSource: "# Notes",
+            currentSource: "# Notes"
+        )
+    )
+    #expect(markdownTab.presentationMode == .source)
+
+    var sourceTab = DocumentTab(
+        id: "file:///tmp/project/split.md",
+        url: URL(fileURLWithPath: "/tmp/project/split.md"),
+        kind: .markdown,
+        markdownEditSession: MarkdownEditSession(
+            baseSource: "# Notes",
+            currentSource: "# Notes"
+        )
+    )
+    sourceTab.selectPresentationMode(.split)
+    #expect(sourceTab.markdownEditSession?.mode == .markdown)
+    #expect(sourceTab.presentationMode == .source)
+
+    let latexTab = DocumentTab(
+        id: "file:///tmp/project/split.tex",
+        url: URL(fileURLWithPath: "/tmp/project/split.tex"),
+        kind: .latex,
+        latexEditSession: MarkdownEditSession(
+            mode: .split,
+            baseSource: "\\section{A}",
+            currentSource: "\\section{A}"
+        )
+    )
+    #expect(latexTab.presentationMode == .split)
+}

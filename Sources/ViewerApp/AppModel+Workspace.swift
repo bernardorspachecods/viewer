@@ -64,6 +64,7 @@ extension AppModel {
         documentRenderCoordinator.cancelAll()
         workspaceTreeSession.reset(rootURL: nil)
         stopWatchingActiveFiles()
+        stopWatchingPartnerFiles()
         _ = workspaceSession.storeSecurityScopedBookmark(for: url)
         let accessibleRoot = (try? workspaceSession.resolveSecurityScopedBookmark(for: url))?.url ?? url
         stopSecurityScopedAccess()
@@ -73,6 +74,9 @@ extension AppModel {
         workspaceTreeSession.reset(rootURL: standardizedRoot)
         tabs = []
         activeTabID = nil
+        splitPartnerID = nil
+        activeSide = .leading
+        stopWatchingPartnerFiles()
         restoreTabs()
         reloadTree()
         persistState()

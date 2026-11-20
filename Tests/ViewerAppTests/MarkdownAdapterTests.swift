@@ -68,7 +68,9 @@ func keepsMarkdownPageWidthStableWhilePreviewResizes() throws {
     #expect(result.html.contains("scrollbar-gutter: stable;"))
     #expect(result.html.contains("margin: 0;"))
     #expect(result.html.contains(".bp-document-content {"))
-    #expect(result.html.contains("max-width: 860px;"))
+    let tokens = MarkdownStyleTokens.shared
+    #expect(result.html.contains("max-width: var(--bp-content-max, \(MarkdownStylesheet.number(tokens.readingWidth))px);"))
+    #expect(result.html.contains("padding: \(MarkdownStylesheet.number(tokens.verticalInset))px \(MarkdownStylesheet.number(tokens.horizontalInset))px 80px;"))
     #expect(result.html.contains(".bp-document-content > * {"))
     #expect(result.html.contains("content-visibility: auto;"))
     #expect(result.html.contains("contain-intrinsic-size: auto 72px;"))
@@ -171,4 +173,40 @@ func exposesNavigableMarkdownOutline() throws {
     #expect(result.outline.map(\.level) == [1, 2, 2])
     #expect(result.outline.map(\.id) == ["introduction", "methods", "methods-2"])
     #expect(result.outline.allSatisfy { result.html.contains("id=\"\($0.id)\"") })
+}
+
+@Test("preview stylesheet is generated from the shared style tokens")
+func previewStylesheetFollowsStyleTokens() {
+    let tokens = MarkdownStyleTokens.shared
+    let css = MarkdownStylesheet.css(tokens: tokens)
+    #expect(css.contains("font-size: \(MarkdownStylesheet.number(tokens.bodyFontSize))px;"))
+    #expect(css.contains("h1 { font-size: \(MarkdownStylesheet.number(tokens.headingScale(level: 1)))em;"))
+    #expect(!css.contains("-apple-system-body"))
+
+    var changed = tokens
+    changed.bodyFontSize = tokens.bodyFontSize + 4
+    changed.quoteBarWidth = tokens.quoteBarWidth + 2
+    let changedCSS = MarkdownStylesheet.css(tokens: changed)
+    #expect(changedCSS != css)
+    #expect(changedCSS.contains("font-size: \(MarkdownStylesheet.number(changed.bodyFontSize))px;"))
+    #expect(changedCSS.contains("padding-left: \(MarkdownStylesheet.number(changed.quoteIndent - changed.quoteBarInset - changed.quoteBarWidth))px;"))
+}
+
+@Test("preview tables fill the width with fixed columns only when the tokens ask for it")
+func previewTablesFollowFillsWidthToken() {
+    var tokens = MarkdownStyleTokens.shared
+    tokens.tableFillsWidth = true
+    let filled = MarkdownStylesheet.css(tokens: tokens)
+    #expect(filled.contains("width: 100%;\n  table-layout: fixed;"))
+    #expect(!filled.contains("width: max-content;"))
+    // Alpha 0 means no header fill.
+    #expect(!filled.contains("background: -apple-system-label"))
+
+    tokens.tableFillsWidth = false
+    let contentSized = MarkdownStylesheet.css(tokens: tokens)
+    #expect(contentSized.contains("width: max-content;"))
+    #expect(!contentSized.contains("table-layout: fixed;"))
+
+    tokens.tableHeaderBackground = MarkdownStyleColor(.muted, alpha: 0.08)
+    #expect(MarkdownStylesheet.css(tokens: tokens).contains("background: color-mix(in srgb, -apple-system-secondary-label 8%, transparent);"))
 }

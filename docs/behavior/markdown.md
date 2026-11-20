@@ -1,6 +1,6 @@
 ---
 bkf: document
-description: "User-visible Markdown behavior: the rendered preview, links between files, Quick Edit, the source editor with its list and completion rules, split view, and the limits of math and of Quick Edit."
+description: "User-visible Markdown behavior: the rendered preview, links between files, the Markdown editor with its live styling, and the limits of math and of the editor."
 tags: [behavior, markdown]
 ---
 
@@ -15,8 +15,7 @@ Shared editing rules (drafts, saving, conflicts, diffs) are in
 | If you need... | Section |
 | --- | --- |
 | What the preview shows and how links behave | [Preview and links](#preview-and-links) |
-| Editing directly in the preview | [Quick Edit](#quick-edit) |
-| The source editor, its completions, and lists | [Source editor](#source-editor) |
+| Editing, shortcuts, and what the editor does not do | [Markdown editor](#markdown-editor) |
 | Limits you must not assume away | [Limits](#limits) |
 
 ## Preview and links
@@ -27,6 +26,10 @@ Shared editing rules (drafts, saving, conflicts, diffs) are in
   image refreshes the preview.
 - Links to Markdown and LaTeX files open or focus their tabs. Links to other local
   files open in the macOS default app. External links open in the browser.
+- A link starting with `/` (`/MAP.md`, `/docs/a.md`) is read from the project root,
+  as repositories write it: the nearest folder above the document with a `.git`
+  entry, or else the nearest folder above the document that holds the path. A path that exists on the disk is kept as written. When no file matches, the
+  click does nothing and shows no message.
 - Relative links (`./a.md`, `../b.md`) resolve from the document's folder. A
   destination may be percent-encoded (`my%20notes.md`) or written in angle brackets
   with spaces (`<my notes.md>`).
@@ -40,51 +43,53 @@ Shared editing rules (drafts, saving, conflicts, diffs) are in
 - Raw HTML in the preview is not run. A line break (`<br>`, `<br/>`, `<br />`) and
   the formatting tags `b`, `strong`, `i`, `em`, `u`, `sub`, `sup`, `kbd`, `mark`,
   `code`, `s`, `del`, `small` render when written bare (no attributes). Any other
-  HTML is never emitted as markup; it shows the grey "HTML raw" placeholder, with
+  HTML is never emitted as markup; it shows a quiet grey placeholder labelled `HTML`
+  (none for a comment, which shows only its text), with
   the source of a block shown as plain text.
+- Front matter made only of flat `key: value` lines shows as a small property list
+  above the document. Lists, nested keys, and block scalars keep the text block
+  labelled `Front matter`.
+- By default the text of the preview and of the editor runs to the window edges, with
+  a side padding that shrinks with the window (from 64 px down to 20 px; 56 px inset in
+  the editor). Settings > Appearance > Markdown Text Width keeps it in a centered
+  column instead (860 px in the preview, 760 px in the editor). The setting applies to
+  every window at once.
 - A bare `<b>` with no closing tag stays bold to the end of its paragraph.
 - If an update fails, the preview keeps the last good result and shows the
   diagnostic.
 
 - Selected text is copied on select; see [view-controls.md](/docs/behavior/view-controls.md#selection).
 
-## Quick Edit
+## Markdown editor
 
-- Double-clicking anywhere in the preview starts Quick Edit. The caret goes to the
-  paragraph, heading, or list item under the pointer when that unit is editable;
-  otherwise Quick Edit starts without a caret.
-- Typing updates the draft without reloading the preview. `Save` and `Esc` save
-  and leave editing, as in the source editor. Quick Edit does not autosave.
-- Inline markup such as bold and links is kept where the Markdown source can be
-  mapped safely. An edit that cannot be mapped is rejected, and the preview
-  re-renders from the draft, which drops that change.
-- Editable as text: paragraphs, headings, and list items.
-- Read-only as a whole: a paragraph, heading, or list that contains an image,
-  display math, or `<`; thematic breaks; and front matter.
-- Code blocks, tables, and quotes accept typing, but every edit to them is
-  rejected, so the text reverts.
-- A typed change is committed to the draft 120 ms after typing stops. A change
-  typed in the moment before `Save` or `Esc` can miss the draft, because a change
-  that arrives after editing has ended is ignored.
-
-## Source editor
-
-- The `Raw Markdown` toolbar button switches between Quick Edit and the source
-  editor and keeps the draft. The button is hidden in split view and while a diff
-  is open.
-- The source editor has syntax highlighting for light and dark themes, undo and
-  redo, `⌘B`, `⌘I`, and `⌘K`, and the shared saving, conflict, and discard rules.
-- Spell correction is on. For inline word completion, the editor uses the
-  on-device Apple Foundation model when it is available for the current language.
-  Otherwise, for languages without native macOS inline predictions, it suggests
-  words from the local dictionary. The suggestion appears in gray: `Space` accepts
-  the word and a following space, `Tab` accepts only the word. For languages with
-  native predictions, macOS provides them.
-- In lists with `-`, `*`, or `+` markers, Return continues the list. In ordered
-  lists with `.` or `)`, Return increments the number. Return on an empty list line
-  removes the marker and ends the list.
-- The source editor can fill the whole area or use split view: source on the left,
-  live preview on the right.
+- The preview is read-only. Double-clicking it does nothing. Editing starts only
+  with the `Markdown Editor` toolbar button, and the editor replaces the preview.
+  The button is hidden while a diff is open.
+- Clicking the button again, `Esc`, and `Save` all leave editing and save the draft,
+  as every editable format does (see
+  [editing-and-diff.md](/docs/behavior/editing-and-diff.md)).
+- The editor styles the Markdown while you type (headings, emphasis, lists, quotes,
+  tables, task checkboxes, code with syntax highlighting, and TeX math), but the text
+  it edits is the Markdown source itself. Its text width follows the Markdown Text Width setting.
+- The editor and the rendered preview share one style definition, so the same Markdown
+  looks the same in both: typography, headings, links, lists, task boxes, quotes, tables,
+  code colors, and inline comments (shown as a muted chip with only the note text). What
+  cannot match is listed in [rendering.md](/docs/technical/rendering.md).
+- Switching between the preview and the editor, in either direction, keeps the same text at
+  the same height, and the new view appears already scrolled there (no frame at the top of the
+  document). Positions near the end of a document are clamped to what the other view can
+  scroll to; other known differences are in [rendering.md](/docs/technical/rendering.md).
+- Undo and redo replace the whole draft and put the caret at the end of the text they changed,
+  so you keep typing inside the table cell, list item or style you were in.
+- Undo and redo act on the draft, `⌘B`, `⌘I`, and `⌘K` apply bold, italic, and inline
+  code, and Return continues or ends a list.
+- Spell correction is on. The app's own inline word completion (Apple Foundation
+  model and local dictionary) is not part of this editor.
+- Picking a heading in the outline while editing moves the caret to it.
+- The editor fills the whole pane. Showing two files side by side is Split View, which is
+  between tabs (see [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md#split-view)).
+- The engine is the third-party `swift-markdown-engine`, pinned to one revision (see
+  [ui-architecture.md](/docs/technical/ui-architecture.md)).
 
 ## Limits
 
@@ -92,5 +97,6 @@ Shared editing rules (drafts, saving, conflicts, diffs) are in
   math commands, packages, macros, environments, alignment, labels and references,
   and custom commands are not validated. Rendering details are in
   [rendering.md](/docs/technical/rendering.md).
-- The Quick Edit commit delay can drop a change typed just before `Save` or `Esc`
-  (see above).
+- The diffs keep the raw source editor, not the Markdown editor: its syntax
+  highlighting, line gutter, and word completion are described in
+  [editing-and-diff.md](/docs/behavior/editing-and-diff.md).

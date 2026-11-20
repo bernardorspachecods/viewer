@@ -13,7 +13,10 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0"),
-        .package(url: "https://github.com/apple/swift-testing.git", from: "0.6.0")
+        .package(url: "https://github.com/apple/swift-testing.git", from: "0.6.0"),
+        // Vendored copy of nodes-app/swift-markdown-engine at ca0d979, patched for Viewer's shared
+        // Markdown style. See Vendor/swift-markdown-engine/viewer-patches.md.
+        .package(path: "Vendor/swift-markdown-engine")
     ],
     targets: [
         .target(
@@ -25,7 +28,12 @@ let package = Package(
         ),
         .executableTarget(
             name: "ViewerApp",
-            dependencies: ["ViewerCore"]
+            dependencies: [
+                "ViewerCore",
+                .product(name: "MarkdownEngine", package: "swift-markdown-engine"),
+                .product(name: "MarkdownEngineCodeBlocks", package: "swift-markdown-engine"),
+                .product(name: "MarkdownEngineLatex", package: "swift-markdown-engine")
+            ]
         ),
         .testTarget(
             name: "ViewerAppTests",

@@ -10,7 +10,6 @@ extension PreviewPane {
                 documentID: tab.id,
                 previewRevision: tab.previewUpdatedAt,
                 outline: tab.markdownOutline,
-                markdownBlocks: tab.markdownBlocks,
                 editingSession: tab.markdownEditSession?.isEditing == true
                     || tab.markdownEditSession?.conflict != nil
                     ? tab.markdownEditSession
@@ -25,37 +24,8 @@ extension PreviewPane {
                         rebuildBlocks: false
                     )
                 },
-                onMarkdownEditEvent: { event in
-                    switch event.kind {
-                    case .begin:
-                        model.beginMarkdownQuickEdit(tabID: tab.id)
-                    case .change:
-                        model.updateMarkdownEditing(
-                            tabID: tab.id,
-                            text: event.text,
-                            rebuildBlocks: true
-                        )
-                    case .end:
-                        model.endMarkdownEditing(tabID: tab.id)
-                    case .undo:
-                        _ = model.undoMarkdownEdit()
-                    case .redo:
-                        _ = model.redoMarkdownEdit()
-                    case .inlineChange:
-                        if let blockID = event.blockID, let original = event.originalText {
-                            model.applyInlineMarkdownEdit(
-                                tabID: tab.id,
-                                blockID: blockID,
-                                unitIndex: event.unitIndex,
-                                original: original,
-                                edited: event.text
-                            )
-                        }
-                    }
-                },
-                isQuickEditEnabled: tab.markdownEditSession?.isPreviewInline == true,
-                onSetRawMarkdownEditing: { raw in
-                    model.setMarkdownRawEditing(tabID: tab.id, raw: raw)
+                onToggleMarkdownEditor: {
+                    model.toggleMarkdownEditor(tabID: tab.id)
                 },
                 onUndo: {
                     _ = model.undoMarkdownEdit()
@@ -63,19 +33,11 @@ extension PreviewPane {
                 onRedo: {
                     _ = model.redoMarkdownEdit()
                 },
-                onToggleSplitView: {
-                    model.toggleMarkdownSplitView(tabID: tab.id)
-                },
                 onToggleDiff: { mode in
                     model.toggleDocumentDiff(mode: mode, tabID: tab.id)
                 },
                 onEndMarkdownEditing: {
                     model.endMarkdownEditing(tabID: tab.id)
-                },
-                onSaveMarkdownEditing: {
-                    Task { @MainActor in
-                        _ = await model.saveMarkdownEditing(tabID: tab.id)
-                    }
                 },
                 onDiscardMarkdownEditing: {
                     model.discardEditing(tabID: tab.id)
@@ -90,12 +52,12 @@ extension PreviewPane {
                     model.useExternalMarkdownEdit(tabID: tab.id)
                 },
                 zoom: tab.previewZoom,
-                findQuery: model.findQuery,
+                findQuery: paneFindQuery,
                 findRequestID: model.findRequestID,
                 findBackwards: model.findBackwards,
                 findTarget: model.findTarget,
                 onFindTargetChanged: model.setFindTarget,
-                onFindMatchCount: model.setFindMatchCount,
+                onFindMatchCount: paneFindMatchCount,
                 anchorRequest: tab.previewAnchorRequest,
                 onAnchorRequestApplied: { requestID in
                     model.clearPreviewAnchorRequest(requestID, forTabID: tab.id)
@@ -178,12 +140,12 @@ extension PreviewPane {
                 onSnapshotCapture: { image in
                     model.finishSnapshotCapture(image, forTabID: tab.id)
                 },
-                findQuery: model.findQuery,
+                findQuery: paneFindQuery,
                 findRequestID: model.findRequestID,
                 findBackwards: model.findBackwards,
                 findTarget: model.findTarget,
                 onFindTargetChanged: model.setFindTarget,
-                onFindMatchCount: model.setFindMatchCount
+                onFindMatchCount: paneFindMatchCount
             )
         }
     }
@@ -194,12 +156,12 @@ extension PreviewPane {
             editingSession: tab.csvEditSession,
             zoom: tab.previewZoom,
             previewRevision: tab.previewUpdatedAt,
-            findQuery: model.findQuery,
+            findQuery: paneFindQuery,
             findRequestID: model.findRequestID,
             findBackwards: model.findBackwards,
-            isFindTarget: model.findTarget == .preview,
+            isFindTarget: isFocusedPane && model.findTarget == .preview,
             onFindFocus: { model.setFindTarget(.preview) },
-            onFindMatchCount: model.setFindMatchCount,
+            onFindMatchCount: paneFindMatchCount,
             onCellChanged: { row, column, value in
                 model.updateCSVEditing(
                     tabID: tab.id,
@@ -272,7 +234,7 @@ extension PreviewPane {
             onRedo: {
                 _ = model.redoLatexEdit()
             },
-            onToggleSplitView: {
+            onToggleSourceAndPDF: {
                 model.toggleLatexSplitView(tabID: tab.id)
             },
             onToggleDiff: { mode in
@@ -293,12 +255,12 @@ extension PreviewPane {
             onUseExternalEdit: {
                 model.useExternalLatexEdit(tabID: tab.id)
             },
-            findQuery: model.findQuery,
+            findQuery: paneFindQuery,
             findRequestID: model.findRequestID,
             findBackwards: model.findBackwards,
             findTarget: model.findTarget,
             onFindTargetChanged: model.setFindTarget,
-            onFindMatchCount: model.setFindMatchCount,
+            onFindMatchCount: paneFindMatchCount,
             isOutlineVisible: Binding(
                 get: { model.tabs.first(where: { $0.id == tab.id })?.isOutlineVisible ?? false },
                 set: { model.setOutlineVisible($0, forTabID: tab.id) }

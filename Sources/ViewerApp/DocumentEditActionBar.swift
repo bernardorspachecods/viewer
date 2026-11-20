@@ -39,16 +39,23 @@ struct DocumentEditActionBar: View {
 }
 
 struct DocumentEditModeButton: View {
+    @EnvironmentObject private var model: AppModel
     let title: String
     let systemImage: String
     let isActive: Bool
     let action: () -> Void
 
+    /// Two panes are too narrow for labels (they wrap), so a split keeps only the icons; the title
+    /// stays as the accessibility label and the tooltip.
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
                 .font(BPTokens.Typography.caption)
+                .lineLimit(1)
+                .labelStyle(DocumentEditModeLabelStyle(iconOnly: model.isSplit))
         }
+        .help(title)
+        .accessibilityLabel(title)
         .buttonStyle(QuietButtonStyle(
             isSelected: isActive,
             horizontalPadding: BPTokens.Spacing.sm,
@@ -56,5 +63,18 @@ struct DocumentEditModeButton: View {
         ))
         .focusable(false)
         .accessibilityValue(isActive ? "Active" : "Inactive")
+    }
+}
+
+/// Shows a mode button's icon and title, or only the icon (the title remains its accessibility label).
+struct DocumentEditModeLabelStyle: LabelStyle {
+    let iconOnly: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        if iconOnly {
+            configuration.icon
+        } else {
+            Label(configuration)
+        }
     }
 }

@@ -15,11 +15,35 @@ public struct MarkdownReadingPosition: Codable, Hashable, Sendable {
     public let scrollY: Double
     public let anchorID: String?
     public let anchorOffset: Double
+    /// The Markdown block at the top of the view, by where it starts in the source (UTF-8), and
+    /// where its top edge is relative to the top of the view, in CSS pixels at zoom 1. Both the
+    /// preview and the editor report and restore this, so switching between them keeps the same
+    /// text at the same height.
+    public let sourceOffset: Int?
+    public let blockTop: Double
 
-    public init(scrollY: Double, anchorID: String?, anchorOffset: Double) {
+    public init(
+        scrollY: Double,
+        anchorID: String?,
+        anchorOffset: Double,
+        sourceOffset: Int? = nil,
+        blockTop: Double = 0
+    ) {
         self.scrollY = scrollY
         self.anchorID = anchorID
         self.anchorOffset = anchorOffset
+        self.sourceOffset = sourceOffset
+        self.blockTop = blockTop
+    }
+
+    // Positions saved before the block fields existed have neither key.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        scrollY = try container.decode(Double.self, forKey: .scrollY)
+        anchorID = try container.decodeIfPresent(String.self, forKey: .anchorID)
+        anchorOffset = try container.decode(Double.self, forKey: .anchorOffset)
+        sourceOffset = try container.decodeIfPresent(Int.self, forKey: .sourceOffset)
+        blockTop = try container.decodeIfPresent(Double.self, forKey: .blockTop) ?? 0
     }
 }
 
@@ -55,6 +79,17 @@ public struct MarkdownConflict: Hashable, Sendable {
     }
 }
 
+/// Asks the editor to put the caret at a source position, once per `serial`.
+public struct SourceCaretRequest: Hashable, Sendable {
+    public let utf8Offset: Int
+    public let serial: Int
+
+    public init(utf8Offset: Int, serial: Int) {
+        self.utf8Offset = utf8Offset
+        self.serial = serial
+    }
+}
+
 public struct SourceEditSession: Hashable, Sendable {
     public var mode: SourceEditingMode
     public var splitReturnMode: DocumentPresentationMode?
@@ -65,8 +100,8 @@ public struct SourceEditSession: Hashable, Sendable {
     public var undoSources: [String]
     public var redoSources: [String]
     public var conflict: MarkdownConflict?
-    /// True while the preview itself is editable (Quick Edit) instead of the raw source editor.
-    public var isPreviewInline: Bool
+    /// Set by undo and redo, which replace the whole draft: where the caret should go afterwards.
+    public var caretRequest: SourceCaretRequest?
 
     public init(
         mode: SourceEditingMode = .markdown,
@@ -78,7 +113,7 @@ public struct SourceEditSession: Hashable, Sendable {
         undoSources: [String] = [],
         redoSources: [String] = [],
         conflict: MarkdownConflict? = nil,
-        isPreviewInline: Bool = false
+        caretRequest: SourceCaretRequest? = nil
     ) {
         self.mode = mode
         self.splitReturnMode = splitReturnMode
@@ -89,7 +124,7 @@ public struct SourceEditSession: Hashable, Sendable {
         self.undoSources = undoSources
         self.redoSources = redoSources
         self.conflict = conflict
-        self.isPreviewInline = isPreviewInline
+        self.caretRequest = caretRequest
     }
 }
 
@@ -135,8 +170,20 @@ public enum DocumentOutlineSizing {
     public static let minimumWidth = 220.0
     public static let maximumWidth = 480.0
 
+    /// The outline never takes more than this share of a narrow pane (Split View).
+    public static let maximumPaneShare = 0.4
+    public static let narrowPaneMinimumWidth = 140.0
+
     public static func clamped(_ width: Double) -> Double {
         min(max(width, minimumWidth), maximumWidth)
+    }
+
+    /// The width to draw: the preferred width, kept to `maximumPaneShare` of the pane when the pane
+    /// is narrow (nil pane width means the outline has the whole window to share).
+    public static func displayed(preferred: Double, paneWidth: Double?) -> Double {
+        let width = clamped(preferred)
+        guard let paneWidth else { return width }
+        return min(width, max(paneWidth * maximumPaneShare, narrowPaneMinimumWidth))
     }
 }
 
@@ -287,14 +334,6 @@ public struct DocumentTab: Identifiable, Hashable, Sendable {
         if let diffSession {
             return .diff(diffSession.mode)
         }
-        if markdownEditSession?.isEditing == true,
-           markdownEditSession?.mode == .split {
-            return .split
-        }
-        if jsonEditSession?.isEditing == true,
-           jsonEditSession?.mode == .split {
-            return .split
-        }
         if latexEditSession?.isEditing == true,
            latexEditSession?.mode == .split {
             return .split
@@ -315,7 +354,6 @@ public struct DocumentTab: Identifiable, Hashable, Sendable {
         case .preview:
             diffSession = nil
             markdownEditSession?.isEditing = false
-            markdownEditSession?.isPreviewInline = false
             jsonEditSession?.isEditing = false
             latexEditSession?.isEditing = false
         case .source, .diff:
@@ -325,8 +363,6 @@ public struct DocumentTab: Identifiable, Hashable, Sendable {
             latexEditSession?.mode = .markdown
         case .split:
             diffSession = nil
-            markdownEditSession?.mode = .split
-            jsonEditSession?.mode = .split
             latexEditSession?.mode = .split
         }
     }

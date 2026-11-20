@@ -111,6 +111,8 @@ extension Runner {
             "bridged link keeps its Markdown destination"
         )
 
+        runRootRelativeLinkContracts()
+
         let external = try? SwiftMarkdownAdapter().render(source: "[Site](https://example.com/page#top)", baseURL: base)
         expect(external?.html.contains("href=\"https://example.com/page#top\"") == true, "external link is unchanged")
     }
@@ -122,4 +124,60 @@ private func allHrefs(in html: String) -> [String] {
 
 private func firstHref(in html: String) -> String? {
     allHrefs(in: html).first
+}
+
+extension Runner {
+    /// Links written from the project root (`/MAP.md`, `/docs/a.md`), as repositories do.
+    mutating func runRootRelativeLinkContracts() {
+        let project = FileManager.default.temporaryDirectory
+            .appendingPathComponent("viewer-root-links-" + UUID().uuidString, isDirectory: true)
+            .resolvingSymlinksInPath()
+        let nested = project.appendingPathComponent("docs/behavior", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: project) }
+        do {
+            try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(
+                at: project.appendingPathComponent(".git", isDirectory: true),
+                withIntermediateDirectories: true
+            )
+            try "# Map".write(to: project.appendingPathComponent("MAP.md"), atomically: true, encoding: .utf8)
+            try "# Docs map".write(to: project.appendingPathComponent("docs/MAP.md"), atomically: true, encoding: .utf8)
+            try "# Doc".write(to: nested.appendingPathComponent("markdown.md"), atomically: true, encoding: .utf8)
+        } catch {
+            expect(false, "root-relative link fixture could not be created: \(error)")
+            return
+        }
+
+        expect(
+            MarkdownLinkResolver.target(forDestination: "/MAP.md", baseURL: nested)
+                == .localFile(project.appendingPathComponent("MAP.md"), fragment: nil),
+            "root-relative link resolves from the project folder above the document"
+        )
+        expect(
+            MarkdownLinkResolver.target(forDestination: "/MAP.md", baseURL: nested.appendingPathComponent("..", isDirectory: true))
+                == .localFile(project.appendingPathComponent("MAP.md"), fragment: nil),
+            "root-relative link prefers the git root over a closer folder with the same file name"
+        )
+        expect(
+            MarkdownLinkResolver.target(forDestination: "/docs/behavior/markdown.md#limits", baseURL: nested)
+                == .localFile(nested.appendingPathComponent("markdown.md"), fragment: "limits"),
+            "root-relative link keeps its fragment"
+        )
+        expect(
+            MarkdownLinkResolver.target(forDestination: project.appendingPathComponent("MAP.md").path, baseURL: nested)
+                == .localFile(project.appendingPathComponent("MAP.md"), fragment: nil),
+            "an absolute path that exists on disk stays as written"
+        )
+        expect(
+            MarkdownLinkResolver.target(forDestination: "/missing-\(UUID().uuidString).md", baseURL: nested)?.isLocalFile == true,
+            "a root-relative link with no file anywhere stays a local link"
+        )
+    }
+}
+
+private extension MarkdownLinkTarget {
+    var isLocalFile: Bool {
+        if case .localFile = self { return true }
+        return false
+    }
 }
