@@ -75,6 +75,8 @@ Shared editing rules (drafts, saving, conflicts, diffs) are in
   looks the same in both: typography, headings, links, lists, task boxes, quotes, tables,
   code colors, and inline comments (shown as a muted chip with only the note text). What
   cannot match is listed in [rendering.md](/docs/technical/rendering.md).
+- Fenced code without a language (or tagged `text`, `txt`, `plain`, `plaintext` or `none`) is
+  not colored, because guessing a language colored ordinary words as keywords.
 - Switching between the preview and the editor, in either direction, keeps the same text at
   the same height, and the new view appears already scrolled there (no frame at the top of the
   document). Positions near the end of a document are clamped to what the other view can

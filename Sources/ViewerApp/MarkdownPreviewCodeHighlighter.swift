@@ -21,7 +21,21 @@ struct MarkdownPreviewCodeHighlighter: MarkdownCodeHighlighting {
         plainDarkHex = Self.hex(CodeHighlightTheme.githubDark.foreground) ?? ""
     }
 
+    /// Language tags that mean "no highlighting". A missing language is never guessed:
+    /// highlight.js would guess one and color ordinary words as keywords.
+    private static let plainLanguageNames: Set<String> = ["text", "txt", "plain", "plaintext", "none"]
+
+    /// True when the fence's language (the first word of its info string) should be highlighted.
+    static func isHighlightable(language: String?) -> Bool {
+        guard let info = language,
+              let name = info.split(whereSeparator: \.isWhitespace).first else {
+            return false
+        }
+        return !plainLanguageNames.contains(name.lowercased())
+    }
+
     func spans(code: String, language: String?) -> [MarkdownCodeSpan]? {
+        guard Self.isHighlightable(language: language) else { return nil }
         guard let lightText = light.highlight(code: code, language: language),
               let darkText = dark.highlight(code: code, language: language),
               lightText.length == darkText.length else {
