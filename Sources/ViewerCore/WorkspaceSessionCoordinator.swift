@@ -103,6 +103,15 @@ public final class WorkspaceSessionCoordinator {
         updateGlobal { $0.launchBehavior = behavior.rawValue }
     }
 
+    /// Whether a preview selection is copied to the pasteboard. Absent in older state, which is on.
+    public var copyOnSelect: Bool {
+        state.global.copyOnSelect
+    }
+
+    public func setCopyOnSelect(_ enabled: Bool) {
+        updateGlobal { $0.copyOnSelect = enabled }
+    }
+
     public var windowOpeningPreferences: WindowOpeningPreferences {
         state.global.windowOpeningPreferences
     }

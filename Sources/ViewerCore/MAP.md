@@ -15,6 +15,7 @@ description: "UI-independent Viewer logic: filesystem scanning, session and tab 
 
 - [FileSystemFoundation.swift](/Sources/ViewerCore/FileSystemFoundation.swift) defines document types and recursive filesystem scanning.
 - [FolderCollapseRules.swift](/Sources/ViewerCore/FolderCollapseRules.swift) holds the sidebar folder collapse button's step rules.
+- [BuildChannel.swift](/Sources/ViewerCore/BuildChannel.swift) decides whether the running build is the release channel or a development build (DEV label).
 - [AppShortcutCatalog.swift](/Sources/ViewerCore/AppShortcutCatalog.swift) defines every keyboard shortcut the app responds to; the menu commands and the Settings Shortcuts tab both read it.
 - [WorkspaceSessionCoordinator.swift](/Sources/ViewerCore/WorkspaceSessionCoordinator.swift) coordinates workspace state, persistence, permissions, and snapshots.
 - [DocumentOpenCoordinator.swift](/Sources/ViewerCore/DocumentOpenCoordinator.swift) resolves URLs, supported types, and LaTeX context.

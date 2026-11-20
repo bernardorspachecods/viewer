@@ -46,6 +46,8 @@ Shared editing rules (drafts, saving, conflicts, diffs) are in
 - If an update fails, the preview keeps the last good result and shows the
   diagnostic.
 
+- Selected text is copied on select; see [view-controls.md](/docs/behavior/view-controls.md#selection).
+
 ## Quick Edit
 
 - Double-clicking anywhere in the preview starts Quick Edit. The caret goes to the

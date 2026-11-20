@@ -66,11 +66,13 @@ public struct GlobalState: Codable, Sendable {
     public var selectedFileKinds: [String] = DocumentKind.selectableKinds.map(\.rawValue)
     /// Extra extensions shown by "Show selected files only", for files the app does not support.
     public var extraFileExtensions: [String] = []
+    /// Copies a preview selection to the pasteboard when the mouse selection ends; absent in older state, which is on.
+    public var copyOnSelect = true
 
     private enum CodingKeys: String, CodingKey {
         case theme, sidebarVisible, sidebarWidth, latexShellEscapeMode
         case defaultMarkdownZoom, defaultLatexZoom, defaultWorkspaceFolders, selectedFileKinds
-        case extraFileExtensions, launchBehavior, windowOpeningPreferences
+        case extraFileExtensions, launchBehavior, windowOpeningPreferences, copyOnSelect
     }
 
     public init() {}
@@ -92,6 +94,7 @@ public struct GlobalState: Codable, Sendable {
         selectedFileKinds = try container.decodeIfPresent([String].self, forKey: .selectedFileKinds)
             ?? DocumentKind.selectableKinds.map(\.rawValue)
         extraFileExtensions = try container.decodeIfPresent([String].self, forKey: .extraFileExtensions) ?? []
+        copyOnSelect = try container.decodeIfPresent(Bool.self, forKey: .copyOnSelect) ?? true
     }
 }
 

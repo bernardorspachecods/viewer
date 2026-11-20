@@ -49,6 +49,11 @@ final class FittingPDFView: FindTrackingPDFView {
         super.mouseDown(with: event)
     }
 
+    override func mouseUp(with event: NSEvent) {
+        super.mouseUp(with: event)
+        CopyOnSelect.copy(currentSelection?.string)
+    }
+
     override func keyDown(with event: NSEvent) {
         guard let command = PDFPageKeyCommand.command(
             keyCode: event.keyCode,

@@ -24,7 +24,22 @@ fi
 mkdir -p "$app_bundle/Contents/MacOS" "$app_bundle/Contents/Resources"
 cp "$binary_directory/Viewer" "$app_bundle/Contents/MacOS/Viewer"
 cp "$repo_root/Resources/Viewer-Info.plist" "$app_bundle/Contents/Info.plist"
-cp "$repo_root/Resources/Viewer.icns" "$app_bundle/Contents/Resources/Viewer.icns"
+# The app shows a DEV label unless this channel is exactly "release". Written
+# before codesigning, so the signature covers it. The source plist is untouched.
+if [[ "$configuration" == "release" ]]; then
+    build_channel="release"
+else
+    build_channel="dev"
+fi
+/usr/libexec/PlistBuddy -c "Add :ViewerBuildChannel string $build_channel" "$app_bundle/Contents/Info.plist"
+# Dev builds get the orange icon so they are told apart from the installed app.
+# Both icons are produced from the SVGs by scripts/generate-icons.sh.
+if [[ "$configuration" == "release" ]]; then
+    app_icon="Viewer.icns"
+else
+    app_icon="Viewer-dev.icns"
+fi
+cp "$repo_root/Resources/$app_icon" "$app_bundle/Contents/Resources/Viewer.icns"
 
 # Use the existing stable Apple Development identity so macOS can associate
 # Accessibility permission with this app across rebuilds. Never fall back to

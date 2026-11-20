@@ -70,6 +70,8 @@ Authorization of files outside the project is in
   go to that field instead. Arrows with ⌘, ⌥, ⌃, or ⇧ are not page steps.
 - The arrows work in focus mode too (see [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md)).
 
+- Selected PDF text is copied on select; see [view-controls.md](/docs/behavior/view-controls.md#selection).
+
 ## Limits
 
 - Editing several files in one LaTeX session is not supported.

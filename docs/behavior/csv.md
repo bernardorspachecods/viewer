@@ -19,6 +19,8 @@ Shared saving, conflict, and undo rules are in
 - The preview supports search, zoom, snapshots, and automatic updates when the file
   changes.
 
+- Selected cell text is copied on select; see [view-controls.md](/docs/behavior/view-controls.md#selection).
+
 ## Editing
 
 - Double-clicking a cell edits it. Enter on a selected cell also starts editing it.

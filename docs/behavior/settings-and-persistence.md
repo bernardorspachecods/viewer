@@ -1,6 +1,6 @@
 ---
 bkf: document
-description: "User-visible settings (theme, zoom defaults, window opening sizes, shell escape, default workspace folders, file types) and what the app keeps or drops across restarts."
+description: "User-visible settings (theme, zoom defaults, copy on select, window opening sizes, shell escape, default workspace folders, file types) and what the app keeps or drops across restarts."
 tags: [behavior, settings, persistence]
 ---
 
@@ -16,6 +16,9 @@ tags: [behavior, settings, persistence]
   the default workspaces), and the default workspace folders. Add folders with
   `Add Folder…` and remove them with the minus button. Their launch behavior is in
   [workspaces-and-tabs.md](/docs/behavior/workspaces-and-tabs.md).
+- Zoom tab, "Selection": "Copy on select" (on by default). When on, selected preview
+  text goes to the clipboard on mouse release; see
+  [view-controls.md](/docs/behavior/view-controls.md#selection).
 - Windows tab: choose whether the workspace window remembers its last size (the
   default) or uses a custom width and height. Set the `⇧⌘E` reader size separately.
   Apply saves the changes for windows opened afterward. Dimensions are in points,
@@ -38,7 +41,7 @@ tags: [behavior, settings, persistence]
 - Per document: zoom, outline width and visibility, and reading position.
 - Global: theme, sidebar width and visibility, default zoom levels, window opening
   preferences, `shell escape`, launch choice, default workspace folders, selected
-  file types, and extra extensions.
+  file types, extra extensions, and "Copy on select".
 - Snapshots, until you close them.
 
 ## Not kept across restarts

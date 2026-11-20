@@ -40,6 +40,10 @@ struct WorkspaceHeaderBar: View {
     @ViewBuilder
     private var leadingItems: some View {
         if !model.presentation.isReader {
+            if BuildChannel.current.isDevelopment {
+                DevChannelBadge()
+            }
+
             ToolbarIconButton(
                 systemName: "sidebar.left",
                 help: model.sidebarVisible ? "Hide Sidebar" : "Show Sidebar"

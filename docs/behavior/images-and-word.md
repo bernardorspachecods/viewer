@@ -16,6 +16,9 @@ tags: [behavior, images, word]
 
 ## Word
 
+- Text in a Word preview is not copied on select: the preview runs no scripts. See
+  [view-controls.md](/docs/behavior/view-controls.md#selection).
+
 - `.docx` files are converted locally to rich HTML and shown on a page with a
   background and a responsive zoom. The zoom is the tab's zoom.
 - The Word preview takes part in search for the active tab.

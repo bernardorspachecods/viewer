@@ -123,6 +123,7 @@ private struct CSVHTMLPreview: NSViewRepresentable {
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         let webView = FindTrackingWKWebView(frame: .zero, configuration: configuration)
         configuration.userContentController.add(context.coordinator, name: "csvEdit")
+        CopyOnSelect.install(in: configuration)
         webView.onFindFocus = onFindFocus
         webView.disableDrawsBackground()
         webView.underPageBackgroundColor = .clear

@@ -94,7 +94,7 @@ struct ViewerApp: App {
 
             CommandGroup(replacing: .windowArrangement) {
                 Button("Close Tab") {
-                    windowManager.closeActiveTabInKeyWindow()
+                    windowManager.closeActiveTabInKeyWindow(isRepeat: NSApp.currentEvent?.isARepeat ?? false)
                 }
                 .appShortcut(AppShortcuts.closeTab)
             }
@@ -175,6 +175,7 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        applyChannelBadge()
         let captureController = TerminalReplyController(windows: WorkspaceWindowManager.shared)
         replyCapture = captureController
         captureController.registerGlobalShortcut()
@@ -186,8 +187,9 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
                 return event
             }
 
+            let isRepeat = event.isARepeat
             Task { @MainActor in
-                WorkspaceWindowManager.shared.closeActiveTabInKeyWindow()
+                WorkspaceWindowManager.shared.closeActiveTabInKeyWindow(isRepeat: isRepeat)
             }
             return nil
         }
@@ -201,6 +203,18 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
             NSApp.activate(ignoringOtherApps: true)
             NSApp.windows.first?.makeKeyAndOrderFront(nil)
         }
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        applyChannelBadge()
+    }
+
+    /// The DEV Dock badge. Set at launch and again on activation: the Dock can drop a
+    /// badge set before the app is registered with it, so one assignment is not enough.
+    private func applyChannelBadge() {
+        let label = BuildChannel.current.isDevelopment ? BuildChannel.labelText : nil
+        guard NSApp.dockTile.badgeLabel != label else { return }
+        NSApp.dockTile.badgeLabel = label
     }
 
     func applicationWillTerminate(_ notification: Notification) {

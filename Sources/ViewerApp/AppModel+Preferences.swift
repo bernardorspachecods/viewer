@@ -24,6 +24,13 @@ extension AppModel {
         WorkspaceWindowManager.shared.synchronizeGlobalPreferences(from: self)
     }
 
+    func setCopyOnSelect(_ enabled: Bool) {
+        workspaceSession.setCopyOnSelect(enabled)
+        copyOnSelect = workspaceSession.copyOnSelect
+        CopyOnSelect.isEnabled = copyOnSelect
+        WorkspaceWindowManager.shared.synchronizeGlobalPreferences(from: self)
+    }
+
     func setLatexShellEscapeMode(_ mode: LatexShellEscapeMode) {
         guard latexShellEscapeMode != mode else { return }
         latexShellEscapeMode = mode
@@ -43,6 +50,8 @@ extension AppModel {
         latexShellEscapeMode = source.latexShellEscapeMode
         defaultWorkspaceFolders = source.defaultWorkspaceFolders
         launchBehavior = source.launchBehavior
+        copyOnSelect = source.copyOnSelect
+        CopyOnSelect.isEnabled = copyOnSelect
         selectedFileKinds = source.selectedFileKinds
         extraFileExtensions = source.extraFileExtensions
         workspaceTreeSession.setSelectedFileKinds(selectedFileKinds)

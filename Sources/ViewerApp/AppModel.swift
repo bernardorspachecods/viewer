@@ -56,6 +56,8 @@ final class AppModel: ObservableObject {
     @Published var defaultWorkspaceFolders: [String]
     /// What launch opens, mirrored from the shared session like the folder list.
     @Published var launchBehavior: LaunchBehavior
+    /// Copies a preview selection to the pasteboard, mirrored from the shared session like the launch choice.
+    @Published var copyOnSelect: Bool
     @Published var previewZoom: Double = 1.0
     @Published var defaultMarkdownZoom: Double = 1.0
     @Published var defaultLatexZoom: Double = 1.0
@@ -142,8 +144,10 @@ final class AppModel: ObservableObject {
         latexShellEscapeMode = LatexShellEscapeMode(rawValue: configuration.latexShellEscapeMode) ?? .disabled
         defaultWorkspaceFolders = workspaceSession.defaultWorkspaceFolderPaths
         launchBehavior = workspaceSession.launchBehavior
+        copyOnSelect = workspaceSession.copyOnSelect
         selectedFileKinds = workspaceSession.selectedFileKinds
         extraFileExtensions = workspaceSession.extraFileExtensions
+        CopyOnSelect.isEnabled = workspaceSession.copyOnSelect
         defaultMarkdownZoom = min(max(configuration.defaultMarkdownZoom, 0.7), 2.0)
         defaultLatexZoom = min(max(configuration.defaultLatexZoom, 0.7), 2.0)
 

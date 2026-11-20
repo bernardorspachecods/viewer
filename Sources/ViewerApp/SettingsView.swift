@@ -71,6 +71,20 @@ private struct ZoomSettingsView: View {
             Text("Applies to documents without an individually saved zoom level.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            Section("Selection") {
+                Toggle(
+                    "Copy on select",
+                    isOn: Binding(
+                        get: { model.copyOnSelect },
+                        set: { model.setCopyOnSelect($0) }
+                    )
+                )
+            }
+
+            Text("Text selected in a preview is copied as soon as you release the mouse. Source editors are not affected.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .formStyle(.grouped)
         .padding()

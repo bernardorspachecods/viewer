@@ -52,6 +52,7 @@ struct MarkdownWebView: NSViewRepresentable {
             )
         )
         configuration.userContentController.add(context.coordinator, name: "viewerMarkdownEdit")
+        CopyOnSelect.install(in: configuration)
 
         let webView = FindTrackingWKWebView(frame: .zero, configuration: configuration)
         webView.onFindFocus = onFindFocus

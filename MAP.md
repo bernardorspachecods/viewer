@@ -47,8 +47,11 @@ Structural rules for code and documents are in [AGENTS.md](/AGENTS.md). How to d
 - [check-function-size.sh](/scripts/check-function-size.sh) enforces the 150-line limit on Swift function, method, init, and computed property bodies in `Sources/` and `Tests/`; over-limit functions are pinned by file and name in `scripts/function-size-baseline.json`, and a pin can only go down (`--update` lowers it).
 - [install-app.sh](/scripts/install-app.sh) builds the release app and installs it in `/Applications` or `VIEWER_INSTALL_DIR`.
 - [Viewer-Info.plist](/Resources/Viewer-Info.plist) supplies macOS app bundle metadata.
-- [Viewer.icns](/Resources/Viewer.icns) is the app icon.
-- [Viewer-logo.svg](/Resources/Viewer-logo.svg) is the vector app logo.
+- [Viewer.icns](/Resources/Viewer.icns) is the release app icon (black background), generated from Viewer-logo.svg by `scripts/generate-icons.sh`.
+- [Viewer-dev.icns](/Resources/Viewer-dev.icns) is the dev app icon (orange background), copied in place of `Viewer.icns` by debug builds.
+- [Viewer-logo.svg](/Resources/Viewer-logo.svg) is the vector app logo (black background) and the source of the release icon.
+- [Viewer-logo-dev.svg](/Resources/Viewer-logo-dev.svg) is the vector source of the dev icon (orange background); it has the orange rounded square in place of the transparent canvas.
+- [generate-icons.sh](/scripts/generate-icons.sh) renders Viewer-logo.svg and Viewer-logo-dev.svg into the `.icns` files.
 - [MarkdownAdapterTests.swift](/Tests/ViewerAppTests/MarkdownAdapterTests.swift) contains package tests for the Markdown adapter and preview; the other app tests sit beside it in `Tests/ViewerAppTests/`, one file per topic.
 
 `.build/`, `.swiftpm/`, and `DerivedData/` hold generated build or package state, not durable context.

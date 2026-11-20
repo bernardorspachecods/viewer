@@ -22,6 +22,18 @@ tags: [behavior, search, zoom]
 - Captured replies open at the default Markdown zoom; see
   [reply-capture-and-snapshots.md](/docs/behavior/reply-capture-and-snapshots.md).
 
+## Selection
+
+- With "Copy on select" on (the default, in Settings > Zoom), text selected with the
+  mouse in a preview is copied to the clipboard when the mouse button is released.
+  A double or triple click counts. A click without a selection does not touch the
+  clipboard. Settings are in [settings-and-persistence.md](/docs/behavior/settings-and-persistence.md).
+- It applies to preview text only: Markdown, CSV, and LaTeX/PDF pages. Source editors
+  and editable cells never copy on select, so editing does not replace the clipboard.
+- Known gaps: the JSON preview is a read-only source view, so it does not copy on
+  select; Word previews do not either, because their web view runs no scripts. A drag
+  that ends outside the Markdown or CSV web view is not copied.
+
 ## Outline
 
 - Markdown shows an outline of its headings, and PDF shows the document outline.

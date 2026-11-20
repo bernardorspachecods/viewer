@@ -13,7 +13,8 @@ Shared editing, conflict, and diff rules are in
 
 - `.json` files are validated and shown in a monospaced, read-only raw view. The
   view keeps the file's exact lines, including empty ones, with line numbers.
-- The text can be selected and copied. The preview supports zoom, snapshots, and
+- The text can be selected and copied, but not copied on select; see
+  [view-controls.md](/docs/behavior/view-controls.md#selection). The preview supports zoom, snapshots, and
   automatic updates when the file changes.
 - Invalid JSON keeps the last valid preview, if there is one, and shows the
   validation diagnostic.

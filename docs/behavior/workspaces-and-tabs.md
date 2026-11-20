@@ -49,6 +49,11 @@ tags: [behavior, workspaces, tabs]
   is the only workspace window. The unsaved-changes rules in
   [editing-and-diff.md](/docs/behavior/editing-and-diff.md) still apply. The app
   keeps running after its last window closes.
+- Holding `⌘W` (key repeat) closes tabs one by one but never closes the window: once
+  the tabs are gone, the repeats do nothing. Closing the window takes a fresh press.
+  A reader window counts its single tab as the last one, so a repeat does nothing
+  there either. The rule stops a held key from closing a workspace window by accident
+  after its last tab.
 - A tab's context menu has copy path, reveal in sidebar (selects the file in the
   sidebar tree), reveal in Finder, reload, rename, duplicate, move to Trash, close
   tab, and close other tabs. An untitled tab has only the two close actions.
@@ -100,3 +105,5 @@ tags: [behavior, workspaces, tabs]
 ## Not supported
 
 - Nothing is listed here beyond the limits in the owner documents.
+
+Development builds mark the app with DEV (Dock badge, window titles, header chip); see [architecture](/docs/technical/architecture.md#build-channels).

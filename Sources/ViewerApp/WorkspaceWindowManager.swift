@@ -193,21 +193,28 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
         persistWorkspaceLayout()
     }
 
-    func closeActiveTabInKeyWindow() {
+    /// Cmd-W in the key window. `isRepeat` marks an auto-repeated key event, which may
+    /// close tabs but never the window (see `CloseShortcutAction`).
+    func closeActiveTabInKeyWindow(isRepeat: Bool) {
         guard let keyWindow = NSApp.keyWindow else { return }
         if let snapshotWindow = keyWindow as? SnapshotPanel {
             snapshotWindow.performClose(nil)
             return
         }
         guard let model = models[ObjectIdentifier(keyWindow)] else { return }
-        // With no document tab left there is nothing to close inside the window,
-        // so Cmd-W closes the window. A reader window holds a single reply, so its
-        // last tab closes the window too. performClose runs the unsaved-changes guard.
-        if model.tabs.isEmpty || (model.presentation.isReader && model.tabs.count <= 1) {
+        switch CloseShortcutAction.decide(
+            tabCount: model.tabs.count,
+            isReader: model.presentation.isReader,
+            isRepeat: isRepeat
+        ) {
+        case .closeTab:
+            model.closeActiveTab()
+        case .closeWindow:
+            // performClose runs the unsaved-changes guard.
             keyWindow.performClose(nil)
-            return
+        case .ignore:
+            break
         }
-        model.closeActiveTab()
     }
 
     func modelForActiveWindow(fallback: AppModel? = nil) -> AppModel? {
@@ -230,7 +237,7 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
             _ = readerModel.openDocument(url: file)
             // The hosting view resets the title after its first layout, so set it
             // again on the next run loop turn.
-            let title = "Viewer — \(file.lastPathComponent)"
+            let title = BuildChannel.current.windowTitle(base: "Viewer — \(file.lastPathComponent)")
             readerWindow.title = title
             DispatchQueue.main.async { [weak readerWindow] in
                 readerWindow?.title = title
@@ -430,7 +437,7 @@ final class WorkspaceWindowManager: NSObject, ObservableObject {
     }
 
     private func updateWindowTitle(_ window: NSWindow, for model: AppModel) {
-        let title = model.rootURL?.lastPathComponent ?? "Viewer"
+        let title = BuildChannel.current.windowTitle(base: model.rootURL?.lastPathComponent ?? "Viewer")
         window.title = title
         window.tab.title = title
     }
