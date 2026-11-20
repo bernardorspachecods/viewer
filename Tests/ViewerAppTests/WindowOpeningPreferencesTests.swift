@@ -39,9 +39,7 @@ func windowOpeningPreferencesPersist() throws {
 
 @Test("Window dimensions respect the app minimum and the available screen size")
 func windowOpeningSizeFitsDisplay() {
-    let available = CGSize(width: 1300, height: 800)
-    #expect(WindowOpeningSize(width: 1600, height: 500).fitted(to: available)
-        == CGSize(width: 1300, height: 600))
-    #expect(WindowOpeningSize.standard.fitted(to: CGSize(width: 800, height: 500))
-        == CGSize(width: 900, height: 600))
+    let custom = WindowOpeningSize(width: 1600, height: 500)
+    #expect(custom.fitted(toWidth: 1300.5, height: 800) == (1300.5, 600))
+    #expect(WindowOpeningSize.standard.fitted(toWidth: 800, height: 500) == (900, 600))
 }
